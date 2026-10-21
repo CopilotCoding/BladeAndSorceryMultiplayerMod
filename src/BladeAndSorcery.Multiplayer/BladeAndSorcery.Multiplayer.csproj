@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>BladeAndSorcery.Multiplayer</AssemblyName>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <NoStdLib>true</NoStdLib>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(GameManagedDir)/com.rlabrecque.steamworks.net.dll"><Private>false</Private></Reference>
+    <Reference Include="$(GameManagedDir)/Unity.TextMeshPro.dll"><Private>false</Private></Reference>
+    <Reference Include="$(GameManagedDir)/VRKB.dll;$(GameManagedDir)/TRVRKBSharedData.dll"><Private>false</Private></Reference>
+    <ProjectReference Include="../BladeAndSorcery.Multiplayer.Core/BladeAndSorcery.Multiplayer.Core.csproj" />
+    <PackageReference Include="Lib.Harmony" Version="2.4.1" />
+    <Reference Include="$(GameManagedDir)/mscorlib.dll;$(GameManagedDir)/netstandard.dll;$(GameManagedDir)/System*.dll"><Private>false</Private></Reference>
+    <Reference Include="$(GameManagedDir)/UnityEngine*.dll;$(GameManagedDir)/Unity.InputSystem.dll;$(GameManagedDir)/Unity.XR*.dll;$(GameManagedDir)/Unity.Addressables.dll;$(GameManagedDir)/Unity.ResourceManager.dll;$(GameManagedDir)/ThunderRoad*.dll;$(GameManagedDir)/Newtonsoft.Json.dll;$(GameManagedDir)/RootMotion*.dll;$(GameManagedDir)/Sirenix*.dll;$(GameManagedDir)/TriInspector*.dll">
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="VerifyGameReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(GameManagedDir)/ThunderRoad.dll')" Text="Set GameManagedDir to this PCVR game's Managed folder." />
+  </Target>
+</Project>

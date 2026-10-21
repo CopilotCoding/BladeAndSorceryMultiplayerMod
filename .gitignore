@@ -1,0 +1,12 @@
+# Local proprietary game references and inspection output must never be distributed.
+/Managed/
+/.inspection/
+/.tools/
+/.runtime/
+/artifacts/
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+

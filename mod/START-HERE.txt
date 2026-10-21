@@ -1,0 +1,70 @@
+BLADE & SORCERY MULTIPLAYER - v0.3.0
+
+EVERYONE: INSTALL FIRST
+1. Close the game and extract this ZIP.
+2. Steam -> Blade & Sorcery -> Manage -> Browse local files.
+3. Open BladeAndSorcery_Data\StreamingAssets\Mods.
+4. Copy the extracted BladeAndSorceryMultiplayer folder into Mods.
+   Check: Mods\BladeAndSorceryMultiplayer\manifest.json.
+5. Start PCVR normally and load Home or Arena in Sandbox.
+6. Open IN-GAME menu -> Mods -> Blade & Sorcery Multiplayer.
+   Use Multiplayer tab arrows to switch pages. Status stays at the top.
+
+Everyone needs the same game and mod build. Target: PCVR 1.3.2.261012003.
+Index and Quest connected to a PC use normal PCVR. No Nomad.
+No SDK, build tools or BepInEx setup needed.
+
+BEFORE CONNECTING
+Player & hosting tab: your name, optional server password, host player limit.
+Default limit is 4 including the host; range 2-8. Both connection methods use
+these preferences. Joining players enter a required password before joining.
+
+STEAM TAB: HOST AND JOIN
+HOST: Set Steam visibility -> Friends only (or Public / Invite only).
+      Press Host Steam lobby, then Invite Steam friends.
+      Send invitations using the Steam overlay.
+FRIEND: Accept the Steam invitation after loading a playable map.
+        If needed, press Join invited Steam lobby to retry.
+OR: Refresh Steam lobbies -> Selected Steam lobby -> Join selected Steam lobby.
+Public/friends lobbies use this browser; invite-only needs an invitation.
+Separate online Steam accounts required. Actual between-PC Steam networking
+is still unverified. If it fails, use Direct IP.
+
+DIRECT IP TAB: ALTERNATIVE CONNECTION
+HOST: Set UDP port (default 9050), press Host Direct IP.
+      Share your reachable IP:port. Internet hosting needs UDP port forwarding
+      or an existing private network. Only the host needs the port forward.
+FRIEND: Copy the host's IP:port on desktop.
+        Press Paste IP from clipboard, THEN Join Direct IP.
+        Or use Edit host IP / hostname and Edit UDP port manually.
+127.0.0.1 is your own PC; do not use it to join a friend on another PC.
+
+PLAY TOGETHER
+Wait for Hosting / Joined with both players counted. Joining loads the host's
+current map automatically and gives you a separate safe arrival position.
+
+HOME: Equip normally using the item book, hands, holsters, armor and inventory.
+MAPS: Either player selects a map normally. Everyone loads the same options
+      and seed. Keep the session connected during loading.
+      Held/holstered weapons, worn equipment and supported inventory travel
+      with you and back to Home. Your own character/save stays yours.
+PVP: Equip weapons and fight. No Start PvP button; default is Free for all.
+PVE: Use the map's NORMAL WAVE BOOK. Either player selects a wave and presses
+     Start. Stop / Return works normally. Enemies, equipment and progress are
+     shared. Co-op team protection is automatic while a native wave runs.
+
+PLAY TAB: World/wave status, PvP mode, friendly fire, survive limb loss, respawn.
+SESSION TAB: Player list and Leave session. Host leaving ends the session.
+DIAGNOSTICS TAB: Combat captures. Experimental sword wave is a legacy test;
+                use the normal wave book for ordinary co-op.
+F8: Optional desktop panel with the same pages.
+
+LOADING PROBLEM? Read Play -> World status. Missing map assets cancel travel;
+failed loading attempts recovery or disconnects with an explanation.
+All players need the same map/content installed. Only carry/store loot you
+want to take; loose props remain in their current map.
+
+READ README.md FOR FULL SETUP, NETWORK HELP, LIMITS AND TROUBLESHOOTING.
+READ BUILD-INFO.txt FOR VALIDATION OF THESE EXACT BINARIES.
+Automated coverage does not establish every map, procedural dungeon, modded
+content, player spells/telekinesis/bows, or real Index/Quest network feel.

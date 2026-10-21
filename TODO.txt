@@ -1,0 +1,70 @@
+BLADE & SORCERY MULTIPLAYER - REMAINING WORK (v0.3.0)
+
+IMPLEMENTED IN THIS UPDATE
+[x] General safe arrival placement beyond Arena: native anchors, floor/NavMesh,
+    standing clearance, occupied slots and non-overlapping late joins.
+[x] Shared Home/props, stable scene identities, ownership epochs, positions and
+    velocities, native item-book spawns/storage and loose loot owner departure.
+[x] Either admitted player selects maps through native LevelManager/UI.
+[x] Shared map/mode/options/seed, preflight agreement before unload, one commit,
+    racing selections, persistent connection, slow loading, missing assets,
+    native load error recovery and joining while travel is in progress.
+[x] Home loadouts: held weapons/grips, named holsters, worn equipment and
+    supported native container/custom data travel into maps and back.
+[x] Personal character/save IDs stay local. Clients do not save the host's placed
+    Home world into their own stash; host saving filters guest carried gear.
+[x] Normal native wave-book select/start/stop; original enemy data/loadouts,
+    shared queues/progression/kills/completion, loot, cleanup and late joining.
+[x] Native AI recognizes remote humans. Owner-observed melee contacts reach
+    victim owners without repeating a delayed NPC brain damage window.
+[x] Native NPC projectile metadata, caster outcomes, charge/bolt effects and
+    applicable spell status events; source-owned arrows/projectiles keep
+    consequences independent of a short-lived projectile entity.
+[x] Native pooled NPC lives have separate network kill identities.
+[x] Unified native/desktop pages: Session, Steam, Direct IP, Player & hosting,
+    Play, Diagnostics. Persistent status, explicit buttons, shared friendly fire,
+    and native wave/travel guidance. Legacy sword wave is diagnostic-only.
+
+VERIFICATION / LIMITS
+[x] Twelve focused core checks including real local UDP loopback, compatibility,
+    password/replay protection, capacity and travel agreement ordering/timeouts.
+[x] Six-page native menu visibility, button connection, shared rule and leave
+    checks on final mod build 95a0ffc706c8470c866a75d7904112e3.
+[x] Native caster effects/projectiles and real spell damage to client; native
+    book-selected archer flight metadata and real arrow damage to client.
+    Final ranged report is a fresh run, including fired-arrow ownership and
+    new-player damage attribution after pickup.
+[x] Final matching receipts: 29 shared-world, 37 native PvE, 19 native ranged,
+    12 native menu and 12 core checks. Fixture health/scripted kills are explicit.
+    No retained older-build checks in the final game reports.
+[ ] Certify other maps, procedural dungeons, area streaming, special encounters,
+    every map option and third-party maps/content. Generalized support is not
+    proof that every scripted level works.
+[ ] Extend dedicated player spellcasting, telekinesis, player bow/arrow mechanics,
+    broad spell/status/imbue parity and non-Item scripted-world interactions.
+[ ] Real Index + Quest-PCVR multiplayer session: latency, body/weapon contact
+    feel, two-handed grips, ragdoll/grabbing and eight-player performance.
+[ ] Broad PvP/practice/sword/neck regression suites remain stopped at the user's
+    request. Focused native PvE contact checks do not re-certify every PvP case.
+
+STEAM / CONNECTION WORK
+[x] SteamNetworkingSockets transport under the common session router.
+[x] Public / Friends only / Invite only lobbies, native lobby browser, overlay
+    invitations, clicked/launch-invite handling and late admission/catchup.
+[x] Optional passwords on Steam and Direct IP, exact game/mod build admission,
+    host-inclusive 2-8 capacity, timeouts, cancellation and clean termination.
+[ ] Verify Steam discovery/invites, password rejection/retry, compatibility,
+    actual P2P/relay availability and gameplay across separate accounts/PCs.
+    Same-PC UDP and single-account Steam API checks do not establish this.
+[ ] Add confidentiality/protected exchange for Direct IP. Its current LiteNetLib
+    connection key is not encrypted transport.
+[ ] Audit full real-PC connection/reconnect logs; never distribute multiplayer.json.
+
+DISTRIBUTION
+[x] Versioned ZIP layout with player README, quick start, build evidence,
+    mod-only allowlist and third-party licenses. No game files in the archive.
+[x] Created/installed v0.3.0. Installed DLL hashes match the versioned ZIP build.
+
+NOT REQUESTED / NOT INCLUDED
+No Steam game-server directory, dedicated server or host migration. Public
+lobbies are found through the mod's Steam lobby browser. Nomad is not supported.

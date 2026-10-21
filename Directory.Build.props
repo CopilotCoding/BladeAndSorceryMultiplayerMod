@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>10.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <GameManagedDir Condition="'$(GameManagedDir)' == ''">$(MSBuildThisFileDirectory)Managed</GameManagedDir>
+    <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
+  </PropertyGroup>
+</Project>
