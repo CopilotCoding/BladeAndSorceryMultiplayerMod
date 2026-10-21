@@ -11,7 +11,8 @@ namespace BladeAndSorcery.Multiplayer;
 internal sealed class PlayerWeaponDamageData
 {
     public string Kind="weapon-hit";
-    public int Version=1;
+    public int Version=2;
+    public ulong Attacker;
     public DamageType DamageType;
     public DamageStruct.Penetration Mode;
     public bool BadAngle,HitBack;
@@ -37,7 +38,7 @@ internal sealed partial class GameWorld
             action.Direction.LengthSquared()>250000 || !Registry.TryGet(action.Entity,out var source) || source.Kind!=EntityKind.Item ||
             !Registry.TryGet(action.Other,out var victim) || victim.Kind!=EntityKind.Player || victim.Owner==source.Owner) return false;
         var data=ReadWeaponDamage(action);
-        return data?.Version==1 && Enum.IsDefined(typeof(DamageType),data.DamageType) && data.DamageType!=DamageType.Unknown &&
+        return data?.Version==2 && (data.Attacker==0 || IsHumanWeaponAttacker(data.Attacker,source.Owner)) && Enum.IsDefined(typeof(DamageType),data.DamageType) && data.DamageType!=DamageType.Unknown &&
             data.Mode>=DamageStruct.Penetration.None && data.Mode<=DamageStruct.Penetration.Skewer && data.PushLevel>=-1 && data.PushLevel<=128 &&
             !string.IsNullOrEmpty(data.SourceMaterial) && data.SourceMaterial.Length<=128 && !string.IsNullOrEmpty(data.TargetMaterial) && data.TargetMaterial.Length<=128;
     }
@@ -54,6 +55,8 @@ internal sealed partial class GameWorld
         if(index<0 || part==null || hit.damageStruct.damage<=0 || !Protocol.Finite(hit.damageStruct.damage) || hit.sourceMaterial==null || hit.targetMaterial==null) return false;
         var data=new PlayerWeaponDamageData{DamageType=hit.damageStruct.damageType,Mode=hit.damageStruct.penetration,BadAngle=hit.damageStruct.badAngle,
             HitBack=hit.damageStruct.hitBack,PushLevel=hit.damageStruct.pushLevel,SourceMaterial=hit.sourceMaterial.id,TargetMaterial=hit.targetMaterial.id};
+        var attacker=Find(source.Item.mainHandler?.creature ?? source.Item.lastHandler?.creature);
+        if(attacker?.Descriptor.Kind==EntityKind.Player && attacker.Descriptor.Owner==source.Descriptor.Owner)data.Attacker=attacker.Descriptor.Id;
         SendAction(source,new GameplayAction{Kind=ActionKind.DamageRequest,Other=victim.Descriptor.Id,Handle=index,Part=GameMath.PartKey(part),
             Value=hit.damageStruct.damage,Position=part.transform.InverseTransformPoint(hit.contactPoint).Net(),
             Direction=part.transform.InverseTransformDirection(hit.impactVelocity).Net(),Text=JsonConvert.SerializeObject(data)});
@@ -96,9 +99,11 @@ internal sealed partial class GameWorld
             badAngle=data.BadAngle,hitBack=data.HitBack,pushLevel=data.PushLevel,penetration=data.Mode,time=Time.time};
         hit.damageStruct.materialModifier=(data.BadAngle ? damager.data.badAngleModifierData : damager.data.damageModifierData)?.GetModifier(hit);
         if(hit.damageStruct.materialModifier==null) return;
+        var previousPvpHit=npcStylePvpHit;
+        if(IsHumanWeaponAttacker(data.Attacker,source.Descriptor.Owner))npcStylePvpHit=hit;
         applyingPlayerWeaponDamage=true;
         try{victim.Creature.Damage(hit);}
-        finally{applyingPlayerWeaponDamage=false;}
+        finally{applyingPlayerWeaponDamage=false;npcStylePvpHit=previousPvpHit;}
         // Normal owner damage/kill callbacks publish health, score and respawn;
         // do not suppress them with the general remote replay guard.
     }

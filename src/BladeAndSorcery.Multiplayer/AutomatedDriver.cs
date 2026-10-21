@@ -104,6 +104,7 @@ internal sealed class AutomatedDriver : MonoBehaviour
         string op = (string?)c["op"] ?? throw new InvalidDataException("Command needs op");
         if(op.StartsWith("procedural-",StringComparison.Ordinal))return ProceduralNpcTestProbe.Execute(runtime,c,result=>Respond(response,true,result));
         if(op.StartsWith("compatibility-",StringComparison.Ordinal))return CompatibilityProbe.Execute(runtime,c,result=>Respond(response,true,result));
+        if(op.StartsWith("pvp-probe-",StringComparison.Ordinal))return PvpDamageTestProbe.Execute(runtime,c);
         if(op=="world-audit")return new {
             connected=runtime.Session?.Connected==true,level=Level.current?.data?.id,seed=Level.seed,revision=runtime.Session?.WorldRevision,time=Time.realtimeSinceStartupAsDouble,corrections=runtime.World?.SettledItemCorrections ?? 0,recoveredItems=runtime.World?.RecoveredItemReplicas ?? 0,suppressedDespawns=runtime.World?.SuppressedItemDespawns ?? 0,
             items=Item.allActive.Where(item=>item!=null && item.loaded && item.data!=null).Select(item=>{var entity=runtime.World?.Find(item);var body=item.physicBody.rigidBody;return new {
@@ -653,7 +654,7 @@ public sealed partial class MultiplayerRuntime
             rightItem = Player.local?.creature?.handRight?.grabbedHandle?.item?.data?.id,
             bodyGrips = Player.local?.creature!=null ? new {left=Player.local.creature.handLeft.grabbedHandle?.name,right=Player.local.creature.handRight.grabbedHandle?.name,leftPressed=PlayerControl.GetHand(Side.Left).gripPressed,rightPressed=PlayerControl.GetHand(Side.Right).gripPressed} : null,
             localHealth = Player.local?.creature?.currentHealth,
-            match = World != null ? new { mode=World.Match.Mode.ToString(), wave=World.Match.Wave, pendingWaveSpawns=World.Match.PendingWaveSpawns, friendlyFire=World.Match.FriendlyFire, surviveLimbLoss=World.Match.SurviveLimbLoss, scores=World.Match.Scores.Select(s => new {peer=s.Key,kills=s.Value.Kills,deaths=s.Value.Deaths,team=s.Value.Team}).ToArray() } : null,
+            match = World != null ? new { mode=World.Match.Mode.ToString(), wave=World.Match.Wave, pendingWaveSpawns=World.Match.PendingWaveSpawns, friendlyFire=World.Match.FriendlyFire, surviveLimbLoss=World.Match.SurviveLimbLoss,pvpWeaponDamage=World.Match.PvpWeaponDamage.ToString(), scores=World.Match.Scores.Select(s => new {peer=s.Key,kills=s.Value.Kills,deaths=s.Value.Deaths,team=s.Value.Team}).ToArray() } : null,
             invincible = Player.IsInvincible,
             manualInvincibility = Player.invincibility,
             itemObservation = GetComponent<AutomatedDriver>()?.ItemObservation,

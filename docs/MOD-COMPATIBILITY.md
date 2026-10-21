@@ -1,4 +1,13 @@
-# Mod integration — v0.5.0 / protocol 7
+# Mod integration — v0.5.1 / protocol 8
+
+v0.5.1 adds host-selected PvP weapon damage and a targeted cut-completion fix.
+Realistic Bleeding's RevealDecal Awake optimization can leave split LOD decals
+without a controller. Native Ragdoll.OnSlice then throws before clearing
+sliceRunning and emitting OnEnd (so the cut event never replicates). The fix
+restores the missing native controller only for networked creatures inside
+native split-decal creation, preserving any existing or shared controller.
+Normal mesh cutting, joint detachment and slice events still run natively.
+This does not suppress mesh/bind-pose warnings or certify all clothing mods.
 
 The opt-in procedural NPC API is documented separately in
 [PROCEDURAL-NPC-API.md](PROCEDURAL-NPC-API.md). The v0.4 receipts below are

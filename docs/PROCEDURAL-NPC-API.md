@@ -1,4 +1,9 @@
-# Procedural NPC integration — v0.5.0, API 1, protocol 7
+# Procedural NPC integration — v0.5.1, API 1, protocol 8
+
+API 1 is unchanged from v0.5.0. Protocol 8 adds a shared human-versus-human
+weapon damage rule; procedural NPC attacks retain native player damage rules.
+The v0.5.0 verification receipts below remain historical evidence for those
+exact binaries. See the current release BUILD-INFO for current verification.
 
 This is an opt-in C# API in `BladeAndSorcery.Multiplayer.dll`. It supplies
 multiplayer integration for a separate procedural sword-fighting mod. It does

@@ -4,6 +4,10 @@ PCVR mod using the native ThunderScript loader, native physical replicas and Har
 
 **Player setup and usage:** [mod/README.md](mod/README.md). The versioned ZIP ships that guide and START-HERE.txt at its top level. This README is for development.
 
+## v0.5.1 PvP damage and cut completion
+
+The host can choose native player weapon damage or NPC-style weapon damage under Play. The rule is saved and replicated, including on late joining. Only human-versus-human weapons bypass native player scaling/caps in NPC-style mode; native health events, armor, invincibility and PvE remain intact. A targeted compatibility patch restores missing split-mesh reveal controllers when an optimizer skips their creation, allowing native slice completion and replication to finish. Protocol 8 requires this build on every peer.
+
 ## v0.5.0 procedural NPC API
 
 An opt-in public API inside the multiplayer DLL supports a separate host-only procedural AI mod. It exposes all human players, guarded native spawning, per-NPC controller handles, virtual hand target/grip replication and lifecycle notifications. Ordinary NPCs keep their native behavior. AI decisions and the host's virtual-hand implementation belong to the separate mod. Developer contract and example: [docs/PROCEDURAL-NPC-API.md](docs/PROCEDURAL-NPC-API.md). This version uses protocol 7 and requires matching builds on all peers.

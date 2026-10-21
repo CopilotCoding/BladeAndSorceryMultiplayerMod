@@ -19,7 +19,7 @@ $verification=$null
 $steamVerification=$null
 $sessionVerification=$null
 $focusedVerification=@{}
-foreach($focusedName in @('shared-world','native-pve','session-ui','native-ranged','mod-compatibility','teleport','procedural-npc','procedural-api-consumer')){
+foreach($focusedName in @('shared-world','native-pve','session-ui','native-ranged','mod-compatibility','teleport','procedural-npc','procedural-api-consumer','pvp-damage')){
     $focusedPath=Join-Path $workspace "artifacts\$focusedName-report.json"
     if(!(Test-Path -LiteralPath $focusedPath)){continue}
     $focused=Get-Content -LiteralPath $focusedPath -Raw|ConvertFrom-Json
@@ -102,6 +102,10 @@ The procedural NPC fixture freezes its source body and uses scripted virtual
 targets, a dynamic native sword and a constructed native contact to test delivery
 and duplicate suppression. It contains no fighting AI and does not certify real
 procedural parries, blade-cut quality or an actual third-party AI mod.
+Focused PvP damage checks, if listed above, use constructed native weapon
+contacts to verify selected scaling, replication and protection rules. Their
+explicit native mesh cuts verify completion/replication with Realistic Bleeding;
+they do not verify physical sword trajectories or successful cutting angles.
 The broad PvP/sword-cut regression suite remains stopped at user request.
 These checks do not establish every map/procedural dungeon, full base-game parity,
 cross-account Steam/relay networking, or real Index/Quest-PCVR network combat feel.

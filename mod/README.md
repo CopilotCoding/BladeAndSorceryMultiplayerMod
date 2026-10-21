@@ -1,10 +1,10 @@
-# Blade & Sorcery Multiplayer — v0.5.0
+# Blade & Sorcery Multiplayer — v0.5.1
 
 Share Home, travel together, fight PvP, or use the normal wave book for co-op. Everyone installs this same ZIP; one person hosts and everyone else joins them.
 
-**v0.5.0:** adds an opt-in API for a separate procedural sword-fighting AI mod. No new AI is bundled here and normal NPC behavior stays native. The AI mod must explicitly integrate; installing an arbitrary AI overhaul does not enable this mode. All peers need this same build (protocol 7). Developers: see docs/PROCEDURAL-NPC-API.md in the separate source ZIP.
+**v0.5.1:** adds a host choice between native player weapon damage and more lethal NPC-style weapon damage, plus a fix for native cut completion with Realistic Bleeding. All peers need this same build (protocol 8). The opt-in API for a separate procedural AI mod remains available; no fighting AI is bundled. Developers: see docs/PROCEDURAL-NPC-API.md in the separate source ZIP.
 
-**Using other mods:** match gameplay mods, versions, files and load order on every PC. v0.5.0 checks content before joining and preserves supported native item/armor data. Special scripted abilities may need an adapter. See COMPATIBILITY.md inside the mod folder for coverage, diagnostics and limits. Older multiplayer versions cannot join this build.
+**Using other mods:** match gameplay mods, versions, files and load order on every PC. v0.5.1 checks content before joining and preserves supported native item/armor data. Special scripted abilities may need an adapter. See COMPATIBILITY.md inside the mod folder for coverage, diagnostics and limits. Older multiplayer versions cannot join this build.
 
 ## 1. Install it — everyone does this
 
@@ -102,6 +102,7 @@ Once connected, you should see each other on the shared map. Spawn and equip wea
 
 - **Respawn:** deaths trigger an automatic respawn. To reset yourself manually, use **Play → Respawn player**.
 - **Survive dismemberment:** the host can enable **Play → Survive limb loss (host)** for everyone. Arms, hands, legs and feet can be severed without forced instant death. Normal damage and head/neck cuts can still kill. Respawn to restore missing limbs.
+- **Weapon damage:** the host chooses **Play → PvP weapon damage (host)**. **Native player damage** (default) keeps the game's player-specific reduction and per-hit caps. **NPC-style weapon damage** removes those extra protections for human-versus-human weapon hits, making clean attacks more lethal. Armor/material damage, invincibility and friendly-fire rules still apply. NPC attacks, damage to NPCs, falls and self-hits retain native rules. The choice is saved for the host and shared with current and joining players. It does not change whether a blade can sever a joint; dismemberment uses its separate native rules.
 - **Change game mode:** the host uses **Play → Game mode (host)**. For ordinary PvP, leave it on **Free for all**.
 - **Leave:** use **Session → Leave session**. If the host leaves, the session ends for everyone. Leave before changing connection settings or joining a different host.
 - **Desktop controls:** F8 opens an optional desktop panel. You can do the connection setup through the VR mod menu instead.

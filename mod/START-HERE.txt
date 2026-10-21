@@ -1,8 +1,10 @@
-BLADE & SORCERY MULTIPLAYER - v0.5.0
+BLADE & SORCERY MULTIPLAYER - v0.5.1
 
-This update adds an opt-in API for a SEPARATE procedural AI mod. No AI is bundled
-here and normal NPCs are unchanged. The separate AI mod must support this API.
-Everyone needs this same multiplayer build; protocol 7 cannot join older builds.
+This update adds Play -> PvP weapon damage (host): choose native player protection
+or the more lethal NPC-style weapon damage. Both players use the host's choice.
+It also fixes a cut-completion conflict with Realistic Bleeding. The separate
+procedural AI integration API remains available; no fighting AI is bundled here.
+Everyone needs this same multiplayer build; protocol 8 cannot join older builds.
 
 EVERYONE: INSTALL FIRST
 Use the same gameplay mods, versions, files and load order on every PC.

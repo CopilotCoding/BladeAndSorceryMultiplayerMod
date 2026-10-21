@@ -82,7 +82,7 @@ public sealed class PeerInfo
 
 public static class Protocol
 {
-    public const ushort Version = 7;
+    public const ushort Version = 8;
     public static bool ApplicationMessage(MessageKind kind) => kind >= MessageKind.Spawn && kind <= MessageKind.ArenaSpawn || kind >= MessageKind.ScenePrepare && kind <= MessageKind.NativeWaveState;
     public const uint Magic = 0x504D5342;
     public const int MaxPeers = 8, MaxParts = 20, MaxEntities = 512;

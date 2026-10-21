@@ -1,7 +1,7 @@
-# Mod compatibility — v0.5.0
+# Mod compatibility — v0.5.1
 
 Install the same gameplay mods, versions, files and load order on every PC.
-Everyone also needs this same multiplayer build. Protocol 7 cannot join older
+Everyone also needs this same multiplayer build. Protocol 8 cannot join older
 multiplayer versions. The mod does not download or distribute other mods.
 
 Before connecting, a background check hashes mod DLLs, bundles, native catalog

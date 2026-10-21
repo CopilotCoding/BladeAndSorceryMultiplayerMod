@@ -17,6 +17,7 @@ public sealed class MultiplayerConfiguration
     public int Port = 9050;
     public int MaxPlayers = 4;
     public bool SurviveLimbLoss;
+    public PvpWeaponDamageRule PvpWeaponDamage;
     public int SteamLobbyVisibility=1;
     public string Password = "";
     public int TestLatencyMilliseconds, TestPacketLossPercent;
@@ -54,6 +55,7 @@ public sealed partial class MultiplayerRuntime
         }
         catch (Exception e) { WriteLog("Configuration error: " + e.Message); }
         Configuration.SteamLobbyVisibility=Mathf.Clamp(Configuration.SteamLobbyVisibility,0,2);
+        if(Configuration.PvpWeaponDamage>PvpWeaponDamageRule.NpcStyle)Configuration.PvpWeaponDamage=PvpWeaponDamageRule.NativePlayer;
         if (TestDirectory.Length > 0)
         {
             // Isolated game pairs must not contend with a live VR host on 9050.
@@ -82,6 +84,7 @@ public sealed partial class MultiplayerRuntime
             Session.Closed += reason => { WriteLog(reason);connectionNotice=reason;if(Session?.TransportName=="Steam P2P")steamLobbies?.NoteConnectionClosed(reason); disconnectRequested = true; };
             World = new GameWorld(Session); World.Log += WriteLog;
             World.Match.SurviveLimbLoss=host && Configuration.SurviveLimbLoss;
+            World.Match.PvpWeaponDamage=host ? Configuration.PvpWeaponDamage : PvpWeaponDamageRule.NativePlayer;
             harmony = new Harmony("zsoul.bladeandsorcery.multiplayer"); harmony.PatchAll(typeof(MultiplayerRuntime).Assembly);
             SavePatchCompatibilityReport();
             previousBackground = Application.runInBackground; Application.runInBackground = true;
@@ -202,10 +205,13 @@ public sealed partial class MultiplayerRuntime
                     GUILayout.EndHorizontal();
                     bool friendly=GUILayout.Toggle(World.Match.FriendlyFire,"Friendly fire");if(friendly!=World.Match.FriendlyFire)FriendlyFireOption(friendly);
                     bool limbs=GUILayout.Toggle(World.Match.SurviveLimbLoss,"Survive limb loss");if(limbs!=World.Match.SurviveLimbLoss)SetLimbLossRule(limbs);
+                    int damage=GUILayout.SelectionGrid((int)World.Match.PvpWeaponDamage,new[]{"Native player damage","NPC-style weapon damage"},2);
+                    if(damage!=(int)World.Match.PvpWeaponDamage)SetPvpDamageRule(damage);
                 }
                 if (World != null)
                 {
                     GUILayout.Label("Mode: " + World.Match.Mode);
+                    GUILayout.Label("PvP weapons: "+(World.Match.PvpWeaponDamage==PvpWeaponDamageRule.NativePlayer ? "native player damage" : "NPC-style damage"));
                     foreach (var p in Session!.Peers.Values)
                     {
                         World.Match.Scores.TryGetValue(p.Id, out var score);
@@ -255,6 +261,7 @@ public sealed partial class MultiplayerRuntime
         ConnectionHelp=connectionNotice.Length>0 ? connectionNotice : "Edit host IP and UDP port here. Confirm saves. Then press Join Direct IP.";
         RefreshNativeText("Connection status",ConnectionStatus);RefreshNativeText("Server address",ServerAddress);RefreshNativeText("Connection help",ConnectionHelp);
         RefreshLimbLossOption();
+        RefreshPvpDamageOption();
         WorldStatus=World?.TravelStatus ?? "Choose a map normally while connected.";
         RefreshNativeText("World status",WorldStatus);
         RefreshSteamMenu();

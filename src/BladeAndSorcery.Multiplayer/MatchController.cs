@@ -20,6 +20,7 @@ internal sealed partial class MatchController
     internal readonly Dictionary<ushort, Score> Scores = new Dictionary<ushort, Score>();
     internal bool FriendlyFire;
     internal bool SurviveLimbLoss;
+    internal PvpWeaponDamageRule PvpWeaponDamage;
     internal float RespawnSeconds = 4;
     internal int Wave;
     internal int PendingWaveSpawns { get; private set; }
@@ -129,17 +130,17 @@ internal sealed partial class MatchController
         foreach (var peer in world.Session.Peers.Keys) Get(peer);
         world.Session.Publish(MessageKind.Match, Protocol.Encode(w =>
         {
-            w.Write((byte)Mode); w.Write(FriendlyFire); w.Write(SurviveLimbLoss); w.Write(RespawnSeconds); w.Write(Wave); w.Write((byte)Scores.Count);
+            w.Write((byte)Mode); w.Write(FriendlyFire); w.Write(SurviveLimbLoss); w.Write((byte)PvpWeaponDamage); w.Write(RespawnSeconds); w.Write(Wave); w.Write((byte)Scores.Count);
             foreach (var entry in Scores) { w.Write(entry.Key); w.Write(entry.Value.Kills); w.Write(entry.Value.Deaths); w.Write(entry.Value.Team); }
         }));
     }
     internal void Receive(BinaryReader reader)
     {
-        var mode = (MultiplayerMode)reader.ReadByte(); bool ff = reader.ReadBoolean(); bool survive = reader.ReadBoolean(); float delay = reader.ReadSingle(); int wave = reader.ReadInt32(); int count = reader.ReadByte();
-        if (mode > MultiplayerMode.Coop || !Protocol.Finite(delay) || delay < 0 || delay > 120 || count > Protocol.MaxPeers) throw new InvalidDataException("Invalid match state");
+        var mode = (MultiplayerMode)reader.ReadByte(); bool ff = reader.ReadBoolean(); bool survive = reader.ReadBoolean(); var damage=(PvpWeaponDamageRule)reader.ReadByte(); float delay = reader.ReadSingle(); int wave = reader.ReadInt32(); int count = reader.ReadByte();
+        if (mode > MultiplayerMode.Coop || damage>PvpWeaponDamageRule.NpcStyle || !Protocol.Finite(delay) || delay < 0 || delay > 120 || count > Protocol.MaxPeers) throw new InvalidDataException("Invalid match state");
         var scores = new Dictionary<ushort, Score>();
         for (int i = 0; i < count; i++) scores.Add(reader.ReadUInt16(), new Score { Kills = reader.ReadInt32(), Deaths = reader.ReadInt32(), Team = reader.ReadInt32() });
         Protocol.End(reader);
-        Mode = mode; FriendlyFire = ff; SurviveLimbLoss=survive; RespawnSeconds = delay; Wave = wave; Scores.Clear(); foreach (var s in scores) Scores.Add(s.Key, s.Value);
+        Mode = mode; FriendlyFire = ff; SurviveLimbLoss=survive; PvpWeaponDamage=damage; RespawnSeconds = delay; Wave = wave; Scores.Clear(); foreach (var s in scores) Scores.Add(s.Key, s.Value);
     }
 }
