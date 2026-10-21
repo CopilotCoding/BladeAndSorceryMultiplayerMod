@@ -18,7 +18,7 @@ Existing physical melee PvP, native grabs/weapon contacts/penetration/cuts, deat
 
 ## Build and distribute
 
-For a fresh source checkout or source ZIP, follow [docs/BUILD-SOURCE.md](docs/BUILD-SOURCE.md), including the first restore. Create a separate versioned source archive with `./scripts/Package-Source.ps1`.
+For a fresh source checkout or source ZIP, close the game and run `./scripts/Build-And-Install.ps1` in PowerShell 7. It detects Steam libraries, copies Managed references, restores dependencies, builds and installs. Use `-GamePath "D:\SteamLibrary\steamapps\common\Blade & Sorcery"` for an explicit location. Requirements and separate build/install commands are in [docs/BUILD-SOURCE.md](docs/BUILD-SOURCE.md). Create a separate versioned source archive with `./scripts/Package-Source.ps1`.
 
 References live in local Managed/ and must match the installed game. Never distribute game assemblies or the isolated test game.
 

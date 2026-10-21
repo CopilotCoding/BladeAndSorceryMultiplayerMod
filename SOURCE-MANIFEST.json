@@ -15,8 +15,8 @@
     },
     {
       "path": "docs/BUILD-SOURCE.md",
-      "bytes": 4183,
-      "sha256": "230A8EA8675C9AA49AC745C2B6F15EAA0AA7A869ED85662E94260D1BCB293F69"
+      "bytes": 4732,
+      "sha256": "B75CC68D355AF3C7687D2E2864FF6FCB1126780ADD4A0AB8950BF259470B291C"
     },
     {
       "path": "docs/IMPLEMENTATION.md",
@@ -60,13 +60,18 @@
     },
     {
       "path": "README.md",
-      "bytes": 6148,
-      "sha256": "AEF02EB65FC8B81CA5974C71968C57049183956047D85F0CD6B6561D4B8FD35F"
+      "bytes": 6434,
+      "sha256": "5B0ECB0DB4A0E7CBF22D5D7237F116AD13FB6D286C3F7730BF11C2E28B32C65B"
     },
     {
       "path": "scripts/Assert-TestGripCollisions.ps1",
       "bytes": 1223,
       "sha256": "69B7197BD309AE2760BF54957ADD21C2D7CB7F4AA7AFBFB399DBA48489899C52"
+    },
+    {
+      "path": "scripts/Build-And-Install.ps1",
+      "bytes": 4963,
+      "sha256": "FBA1AF3E5AB5A4155D39191CADACFDA1EC0FFA57FEB64F143D2D077E7D4C3DCB"
     },
     {
       "path": "scripts/Build.ps1",

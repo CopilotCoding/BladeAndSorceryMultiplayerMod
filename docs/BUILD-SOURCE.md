@@ -14,30 +14,40 @@ and its START-HERE.txt. Player instructions are also in `mod/README.md`.
 - Internet access for the first NuGet restore. Dependencies are pinned in the
   project files (Harmony 2.4.1, LiteNetLib 1.3.1, Mono.Cecil 0.11.5).
 
-## First build
+## Build and install in one command
 
 Extract the ZIP to a writable folder. Open PowerShell 7 in the extracted project
 folder (the one containing Directory.Build.props, src, and scripts).
 
-Copy the **contents** of your installed game's `BladeAndSorcery_Data/Managed`
-folder into a new `Managed` folder at this project root. For the default Steam
-location:
+Close Blade & Sorcery, then run:
 
 ```powershell
-$gamePath = 'C:\Program Files (x86)\Steam\steamapps\common\Blade & Sorcery'
-New-Item -ItemType Directory -Path ./Managed -Force | Out-Null
-Get-ChildItem -LiteralPath (Join-Path $gamePath 'BladeAndSorcery_Data\Managed') -File |
-    Copy-Item -Destination ./Managed -Force
-./scripts/Build.ps1 -Restore
+./scripts/Build-And-Install.ps1
 ```
 
-`Managed/ThunderRoad.dll` must exist directly under Managed, not in another
-nested Managed folder. Game assemblies, assets, saves, binaries and private
-connection settings are deliberately absent from the source ZIP.
+The script finds the game in Steam's libraries, copies its Managed folder into
+this workspace, removes stale top-level reference DLLs, restores NuGet packages,
+builds, and installs the mod. It stops if copying or building fails. It does not
+launch or terminate the game. To select a particular installation:
 
-The first build needs `-Restore`; subsequent builds can use
-`./scripts/Build.ps1`. The script builds the mod and the isolated-runtime patcher.
-It puts the installable mod in:
+```powershell
+$gamePath = 'D:\SteamLibrary\steamapps\common\Blade & Sorcery'
+./scripts/Build-And-Install.ps1 -GamePath $gamePath
+```
+
+`-Configuration Debug` is available; Release is the default. If installation
+fails with access denied, fix write access to that game's Mods folder and rerun
+the install command below. Game assemblies, assets, saves, binaries and private
+connection settings remain excluded from the source ZIP.
+
+## Build separately
+
+After references have been copied, use `./scripts/Build.ps1 -Restore` for a first
+build, or `./scripts/Build.ps1` when packages are already restored. For manual
+setup, copy the contents of your game's `BladeAndSorcery_Data/Managed` into
+`Managed` at this project root; `Managed/ThunderRoad.dll` must exist directly
+there. The build script builds the mod and the isolated-runtime patcher and puts
+the installable mod in:
 
 ```text
 artifacts/mod/BladeAndSorceryMultiplayer/
@@ -53,6 +63,9 @@ Close the installed game, then run:
 ```powershell
 ./scripts/Install-Mod.ps1 -GamePath $gamePath
 ```
+
+Set `$gamePath` to your installation first, or omit `-GamePath $gamePath` for the
+default Steam location under `C:\Program Files (x86)\Steam`.
 
 The installer checks that ThunderRoad.dll matches your build references and
 refuses to replace the mod while that installed game is running. See
