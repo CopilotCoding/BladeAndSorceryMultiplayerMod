@@ -62,7 +62,7 @@ public sealed partial class MultiplayerRuntime
         {
             compatibility=compatibilityScan.GetAwaiter().GetResult();
             CompatibilityStatus=compatibility.Shared.Length+" shared mod(s), "+compatibility.Local.Length+" explicitly local-only. Files checked before admission; custom scripts may need an adapter.";
-            try{File.WriteAllText(Path.Combine(ModFolder,"compatibility-report.json"),JsonConvert.SerializeObject(new{version="0.4.0",shared=compatibility.Shared,localOnly=compatibility.Local,adapters=MultiplayerModApi.Signatures(),patches=PatchInventory()},Formatting.Indented));}
+            try{File.WriteAllText(Path.Combine(ModFolder,"compatibility-report.json"),JsonConvert.SerializeObject(new{version="0.5.0",shared=compatibility.Shared,localOnly=compatibility.Local,adapters=MultiplayerModApi.Signatures(),patches=PatchInventory()},Formatting.Indented));}
             catch(Exception error){WriteLog("Could not save compatibility report: "+error.Message);}
             var continuation=compatibilityContinuation;compatibilityContinuation=null;continuation?.Invoke();
         }

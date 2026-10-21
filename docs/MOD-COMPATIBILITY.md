@@ -1,4 +1,8 @@
-# Mod integration — v0.4.0 / protocol 6
+# Mod integration — v0.5.0 / protocol 7
+
+The opt-in procedural NPC API is documented separately in
+[PROCEDURAL-NPC-API.md](PROCEDURAL-NPC-API.md). The v0.4 receipts below are
+historical; current v0.5 evidence is in that guide and the release BUILD-INFO.
 
 See mod/COMPATIBILITY.md for player guidance. The purpose of this release is
 broad native-content support and an explicit extension boundary. It cannot infer

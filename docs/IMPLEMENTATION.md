@@ -1,5 +1,9 @@
 # Implementation record
 
+The v0.5.0 opt-in host procedural NPC integration is documented in
+[PROCEDURAL-NPC-API.md](PROCEDURAL-NPC-API.md). Historical receipts below apply
+only to their recorded DLLs.
+
 The v0.4.0 compatibility architecture is in [MOD-COMPATIBILITY.md](MOD-COMPATIBILITY.md). Earlier exact-build receipts below apply only to their recorded binaries.
 
 Previous v0.3.0 architecture and exact-build evidence are recorded in [UPDATE-0.3.md](UPDATE-0.3.md). Sections below retain earlier development results and limitations for their stated versions; they are not receipts for newer binaries.

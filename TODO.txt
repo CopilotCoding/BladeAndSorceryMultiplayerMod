@@ -1,6 +1,23 @@
-BLADE & SORCERY MULTIPLAYER - REMAINING WORK (v0.4.0)
+BLADE & SORCERY MULTIPLAYER - REMAINING WORK (v0.5.0)
 
-MOD COMPATIBILITY UPDATE
+PROCEDURAL NPC MULTIPLAYER INTEGRATION (v0.5)
+[x] Public API 1 inside the multiplayer DLL; host/ready-world gate, human roster
+    including remote native creatures, stable session-scoped IDs and grip poses.
+[x] Explicit host NPC registration, procedural mode in late-join descriptors,
+    virtual hand targets, native body snapshots and physical grip drive settings.
+[x] Shared source/replica held-weapon own-body collision filtering; existing
+    weapon ownership, damage, penetration, death and slice event paths retained.
+[x] Animation damage-window bypass scoped to opted-in NPCs. Ordinary NPCs keep
+    native windows; unavailable optional hook disables procedural registration.
+[x] Cancelable native spawning, generation guards, timeout, controller stop
+    notifications, target loss, corpse/native despawn, map/session cleanup.
+[x] Developer guide and external compiled consumer: docs/PROCEDURAL-NPC-API.md.
+[x] Final DLLs: 26 native procedural integration checks, 38 ordinary native PvE,
+    19 player teleport/grip checks, 10 protocol and 17 shared-session checks.
+[ ] Validate the actual separate AI mod, realistic dynamic parries/cuts and
+    real-PC latency. The AI itself is intentionally outside this mod.
+
+EXISTING MOD COMPATIBILITY UPDATE (v0.4)
 [x] Background shared-mod fingerprints and load-order checks before admission,
     explicit pure local-only declarations, named mismatches on Steam/Direct IP.
 [x] Shared settings declarations; public mod names/digests only on the wire.
@@ -44,7 +61,7 @@ EXISTING SHARED-WORLD SYSTEMS (v0.3)
     Play, Diagnostics. Persistent status, explicit buttons, shared friendly fire,
     and native wave/travel guidance. Legacy sword wave is diagnostic-only.
 
-VERIFICATION / LIMITS
+HISTORICAL v0.4 VERIFICATION / ONGOING LIMITS
 [x] Seventeen focused core checks including real local UDP loopback, compatibility,
     password/replay protection, capacity and travel agreement ordering/timeouts.
 [x] Six-page native menu visibility, button connection, shared rule and leave
@@ -86,7 +103,7 @@ STEAM / CONNECTION WORK
 DISTRIBUTION
 [x] Versioned ZIP layout with player README, quick start, build evidence,
     mod-only allowlist and third-party licenses. No game files in the archive.
-[x] Installed v0.4.0. Installed DLL hashes match the final tested build.
+[x] Installed v0.5.0. Installed release files match the final tested build.
 
 NOT REQUESTED / NOT INCLUDED
 No Steam game-server directory, dedicated server or host migration. Public

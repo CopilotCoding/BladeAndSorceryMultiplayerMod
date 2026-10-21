@@ -17,7 +17,7 @@ public interface IMultiplayerItemAdapter
     void ReceiveEvent(Item item, byte[] payload);
 }
 
-public static class MultiplayerModApi
+public static partial class MultiplayerModApi
 {
     internal static readonly Dictionary<string,IMultiplayerItemAdapter> Adapters=new Dictionary<string,IMultiplayerItemAdapter>(StringComparer.Ordinal);
     public static bool Connected => MultiplayerRuntime.Instance?.Session?.Connected==true;

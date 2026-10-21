@@ -1,4 +1,4 @@
-param([switch]$RequireVerified,[switch]$TestsSkippedByUser,[switch]$RequireSharedWorld,[switch]$RequireModCompatibility,[switch]$RequireTeleport)
+param([switch]$RequireVerified,[switch]$TestsSkippedByUser,[switch]$RequireSharedWorld,[switch]$RequireModCompatibility,[switch]$RequireTeleport,[switch]$RequireProceduralNpc,[switch]$RequireNativePve)
 $ErrorActionPreference='Stop'
 if($RequireVerified -and $TestsSkippedByUser){throw 'Choose verified packaging or explicitly skipped checks, not both.'}
 $workspace=Split-Path -Parent $PSScriptRoot
@@ -19,7 +19,7 @@ $verification=$null
 $steamVerification=$null
 $sessionVerification=$null
 $focusedVerification=@{}
-foreach($focusedName in @('shared-world','native-pve','session-ui','native-ranged','mod-compatibility','teleport')){
+foreach($focusedName in @('shared-world','native-pve','session-ui','native-ranged','mod-compatibility','teleport','procedural-npc','procedural-api-consumer')){
     $focusedPath=Join-Path $workspace "artifacts\$focusedName-report.json"
     if(!(Test-Path -LiteralPath $focusedPath)){continue}
     $focused=Get-Content -LiteralPath $focusedPath -Raw|ConvertFrom-Json
@@ -31,6 +31,9 @@ foreach($focusedName in @('shared-world','native-pve','session-ui','native-range
 if($RequireSharedWorld){foreach($focusedName in @('shared-world','native-pve','session-ui','native-ranged')){if(!$focusedVerification.ContainsKey($focusedName)){throw "Passing $focusedName report must match both packaged binaries."}}}
 if($RequireModCompatibility -and !$focusedVerification.ContainsKey('mod-compatibility')){throw 'Passing mod-compatibility report must match both packaged binaries.'}
 if($RequireTeleport -and !$focusedVerification.ContainsKey('teleport')){throw 'Passing native teleport report must match both packaged binaries.'}
+if($RequireProceduralNpc -and !$focusedVerification.ContainsKey('procedural-npc')){throw 'Passing procedural NPC report must match both packaged binaries.'}
+if($RequireProceduralNpc -and !$focusedVerification.ContainsKey('procedural-api-consumer')){throw 'Passing external public API consumer report must match both packaged binaries.'}
+if($RequireNativePve -and !$focusedVerification.ContainsKey('native-pve')){throw 'Passing native PvE report must match both packaged binaries.'}
 $steamReportPath=Join-Path $workspace 'artifacts\steam-capability-report.json'
 if(Test-Path -LiteralPath $steamReportPath){
     $steam=Get-Content -LiteralPath $steamReportPath -Raw|ConvertFrom-Json
@@ -90,11 +93,15 @@ $sessionEvidence
 $steamEvidence
 $focusedEvidence
 
-Target game: PCVR 1.3.2.261012003. Focused shared-world coverage: Home, Arena,
-Canyon, Market, Citadel. Native PvE coverage and menu checks are listed above
-only when their reports match both binaries. Finite-wave progression uses scripted
+Target game: PCVR 1.3.2.261012003. Historical shared-world coverage includes Home,
+Arena, Canyon, Market and Citadel. Only the matching reports listed above apply
+to these binaries. Native PvE finite-wave progression uses scripted
 native kills. Combat fixture enemies receive test-only extra health against incidental
 mock-controller contacts; player damage uses native data and actual weapon contacts.
+The procedural NPC fixture freezes its source body and uses scripted virtual
+targets, a dynamic native sword and a constructed native contact to test delivery
+and duplicate suppression. It contains no fighting AI and does not certify real
+procedural parries, blade-cut quality or an actual third-party AI mod.
 The broad PvP/sword-cut regression suite remains stopped at user request.
 These checks do not establish every map/procedural dungeon, full base-game parity,
 cross-account Steam/relay networking, or real Index/Quest-PCVR network combat feel.

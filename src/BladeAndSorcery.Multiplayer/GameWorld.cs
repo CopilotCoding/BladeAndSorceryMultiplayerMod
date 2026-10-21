@@ -81,6 +81,7 @@ internal sealed partial class GameWorld : IDisposable
     internal void Tick(double now)
     {
         Now = now;
+        TickProceduralNpcs();
         TickSceneTravel();
         if (!Session.Connected || !sceneReady || LevelManager.isLoadingLocked || !GameManager.initialized || Level.current == null) return;
         if (retryResyncAt > 0 && now >= retryResyncAt)
@@ -152,10 +153,11 @@ internal sealed partial class GameWorld : IDisposable
         Id = ((ulong)Session.LocalId << 32) | nextEntity++, Owner = Session.LocalId, Epoch = 1,
         Kind = kind, CatalogId = catalogId, Pose = transform.NetPose()
     };
-    internal ReplicatedEntity Register(Creature creature, EntityKind kind)
+    internal ReplicatedEntity Register(Creature creature, EntityKind kind,bool proceduralNpc=false)
     {
         var existing = Find(creature); if (existing != null) return existing;
         var d = NewDescriptor(kind, creature.data.id, creature.transform);
+        d.ProceduralNpc=proceduralNpc;
         d.Health = creature.currentHealth; d.MaxHealth = creature.maxHealth; d.Killed = creature.isKilled;
         d.Height = Mathf.Clamp(creature.GetHeight(), .3f, 4);
         var custom = kind == EntityKind.Player ? Player.characterData?.customization : null;
@@ -213,7 +215,7 @@ internal sealed partial class GameWorld : IDisposable
                 if(cached.Kind == ActionKind.Grab)
                 {
                     var pose=actor.HandTarget((Side)cached.Side); var data=JsonConvert.DeserializeObject<GripEventData>(cached.Text)!;
-                    cached.Position=pose.Position;cached.Text=GripEvent(data.Orientation,pose.Rotation);
+                    cached.Position=pose.Position;cached.Text=GripEvent(data.Orientation,pose.Rotation,actor.GripSelfCollision);
                 }
                 SendAction(actor,cached);
             }
@@ -229,7 +231,7 @@ internal sealed partial class GameWorld : IDisposable
                     var d = Protocol.Descriptor(r); Protocol.End(r);
                     bool known = Registry.TryGet(d.Id, out var previous);
                     return ValidateItemState(d) && d.Owner == source && (known ? previous.Owner == source && previous.Epoch == d.Epoch && previous.Kind == d.Kind && previous.CatalogId == d.CatalogId : (ushort)(d.Id >> 32) == source && d.Epoch == 1) &&
-                        (d.Kind != EntityKind.Creature || source == 1) && Registry.Count < Protocol.MaxEntities;
+                        (d.Kind != EntityKind.Creature || source == 1) && (!known || !previous.ProceduralNpc || d.ProceduralNpc) && Registry.Count < Protocol.MaxEntities;
                 case MessageKind.State:
                     var s = Protocol.Snapshot(r); Protocol.End(r); return Registry.Owns(s.Id, source, s.Epoch);
                 case MessageKind.Despawn:
@@ -290,6 +292,11 @@ internal sealed partial class GameWorld : IDisposable
                     if (Registry.TryGet(d.Id, out var existingDescriptor))
                     {
                         if(existingDescriptor.Owner!=d.Owner || existingDescriptor.Epoch!=d.Epoch)break;
+                        if(d.ProceduralNpc && !existingDescriptor.ProceduralNpc)
+                        {
+                            existingDescriptor.ProceduralNpc=true;
+                            if(Entities.TryGetValue(d.Id,out var proceduralEntity))proceduralEntity.EnableProceduralReplica();
+                        }
                         if(existingDescriptor.ItemState!=d.ItemState)
                         {
                             existingDescriptor.ItemState=d.ItemState;
@@ -475,7 +482,7 @@ internal sealed partial class GameWorld : IDisposable
         int handleIndex = target.Item ? target.Item!.handles.IndexOf(handle) : ((HandleRagdoll)handle).ragdollPart.handles.IndexOf((HandleRagdoll)handle);
         int orientationIndex = handle.orientations.IndexOf(orientation!);
         var pose = actor.HandTarget(side);
-        var action = new GameplayAction { Kind = ActionKind.Grab, Other = target.Descriptor.Id, Side = (int)side, Handle = handleIndex, Part = handle is HandleRagdoll ragdollHandle ? GameMath.PartKey(ragdollHandle.ragdollPart) : 0, Value = axis, Position=pose.Position, Text = GripEvent(orientationIndex,pose.Rotation) };
+        var action = new GameplayAction { Kind = ActionKind.Grab, Other = target.Descriptor.Id, Side = (int)side, Handle = handleIndex, Part = handle is HandleRagdoll ragdollHandle ? GameMath.PartKey(ragdollHandle.ragdollPart) : 0, Value = axis, Position=pose.Position, Text = GripEvent(orientationIndex,pose.Rotation,actor.GripSelfCollision) };
         grips[(actor.Descriptor.Id << 1) | (uint)side] = action;
         SendAction(actor, action);
     }
@@ -701,7 +708,7 @@ internal sealed partial class GameWorld : IDisposable
         if (entity.Item != null) ClearPlayerItemCollision(entity.Item);
         Entities.Remove(id); entity.Dispose();
         if (entity.Creature) creatures.Remove(entity.Creature!); if (entity.Item) items.Remove(entity.Item!);
-        if (!destroy || (preserveSceneObjects && !entity.SpawnedRemotely)) return;
+        if (!destroy || (preserveSceneObjects && !entity.SpawnedRemotely && !entity.Descriptor.ProceduralNpc)) return;
         applyDepth++;
         try { if (entity.Creature) entity.Creature!.Despawn(); if (entity.Item) entity.Item!.Despawn(); }
         finally { applyDepth--; }
@@ -745,7 +752,7 @@ internal sealed partial class GameWorld : IDisposable
                 if (a.Kind == ActionKind.Grab && Entities.TryGetValue(a.Entity,out var creature))
                 {
                     var target=creature.HandTarget((Side)a.Side); var data=JsonConvert.DeserializeObject<GripEventData>(a.Text)!;
-                    current=new GameplayAction {EventId=a.EventId,Entity=a.Entity,Other=a.Other,Epoch=a.Epoch,Kind=a.Kind,Part=a.Part,Handle=a.Handle,Side=a.Side,Value=a.Value,Position=target.Position,Text=GripEvent(data.Orientation,target.Rotation,creature.Owned ? Player.selfCollision : creature.SourceSelfCollision)};
+                    current=new GameplayAction {EventId=a.EventId,Entity=a.Entity,Other=a.Other,Epoch=a.Epoch,Kind=a.Kind,Part=a.Part,Handle=a.Handle,Side=a.Side,Value=a.Value,Position=target.Position,Text=GripEvent(data.Orientation,target.Rotation,creature.GripSelfCollision)};
                 }
                 Session.SendTo(peer, MessageKind.Gameplay, Protocol.Encode(w => Protocol.Action(w, current)), originalSource: actor.Owner);
             }
@@ -798,6 +805,7 @@ internal sealed partial class GameWorld : IDisposable
     }
     private void Clear()
     {
+        ClearProceduralSpawns();
         Match.Clear();
         ClearNativeWaves();
         ClearNpcEffects();

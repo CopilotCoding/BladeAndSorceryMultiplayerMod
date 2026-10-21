@@ -56,10 +56,10 @@ internal static class NetworkBodyGripAnchorPatch
     private static Transform GripTarget(RagdollHand hand) => hand.playerHand!=null ? hand.playerHand.grip.transform : MultiplayerRuntime.Instance?.World?.Find(hand.creature)?.ControllerTarget(hand.side) ?? hand.grip;
     private static void SetNpcState(Ragdoll ragdoll,Ragdoll.State state)
     {
-        if(MultiplayerRuntime.Instance?.World?.Find(ragdoll.creature)?.Descriptor.Kind==EntityKind.Player) return;
+        if(MultiplayerRuntime.Instance?.World?.Find(ragdoll.creature)?.UsesVirtualHands==true) return;
         ragdoll.SetState(state);
     }
-    private static bool NetworkPlayer(Ragdoll ragdoll) => MultiplayerRuntime.Instance?.World?.Find(ragdoll.creature)?.Descriptor.Kind==EntityKind.Player;
+    private static bool NetworkPlayer(Ragdoll ragdoll) => MultiplayerRuntime.Instance?.World?.Find(ragdoll.creature)?.UsesVirtualHands==true;
     private static void SetNpcArmForces(Ragdoll ragdoll,float spring,float damper,float maxPosition,float maxRotation,bool limits,bool noRoot,RagdollPart.Type parts,Ragdoll.Region region)
     {
         if(!NetworkPlayer(ragdoll)) ragdoll.SetPinForceMultiplier(spring,damper,maxPosition,maxRotation,limits,noRoot,parts,region);
@@ -75,7 +75,7 @@ internal static class NetworkBodyGripAnchorPatch
 [HarmonyPatch(typeof(HandleRagdoll),"ManagedUpdate")]
 internal static class NetworkBodyGripPosturePatch
 {
-    private static bool Prefix(HandleRagdoll __instance) => MultiplayerRuntime.Instance?.World?.Find(__instance.ragdollPart.ragdoll.creature)?.Descriptor.Kind!=EntityKind.Player;
+    private static bool Prefix(HandleRagdoll __instance) => MultiplayerRuntime.Instance?.World?.Find(__instance.ragdollPart.ragdoll.creature)?.UsesVirtualHands!=true;
 }
 
 [HarmonyPatch]
@@ -89,7 +89,7 @@ internal static class NetworkBodyGripPinPatch
     private static void Postfix(HandleRagdoll __instance)
     {
         var entity=MultiplayerRuntime.Instance?.World?.Find(__instance.ragdollPart.ragdoll.creature);
-        if(entity==null || entity.Descriptor.Kind!=EntityKind.Player) return;
+        if(entity==null || !entity.UsesVirtualHands) return;
         entity.RefreshPhysicalHandMass();
         if(!entity.Owned) entity.ClearRemotePinForces();
         else if(!Ragdoll.IsPhysicalState(entity.Creature!.ragdoll.state))

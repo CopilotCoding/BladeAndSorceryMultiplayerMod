@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <NoStdLib>true</NoStdLib>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BladeAndSorcery.Multiplayer"><HintPath>../../artifacts/mod/BladeAndSorceryMultiplayer/BladeAndSorcery.Multiplayer.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="BladeAndSorcery.Multiplayer.Core"><HintPath>../../artifacts/mod/BladeAndSorceryMultiplayer/BladeAndSorcery.Multiplayer.Core.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="$(GameManagedDir)/mscorlib.dll;$(GameManagedDir)/netstandard.dll;$(GameManagedDir)/System*.dll;$(GameManagedDir)/UnityEngine*.dll;$(GameManagedDir)/ThunderRoad.dll"><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

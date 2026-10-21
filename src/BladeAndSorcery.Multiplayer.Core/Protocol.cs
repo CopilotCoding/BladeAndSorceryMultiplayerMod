@@ -24,6 +24,7 @@ public sealed class EntityDescriptor
     public Pose Pose;
     public float Health = 100, MaxHealth = 100;
     public bool Killed;
+    public bool ProceduralNpc;
     public int[] SlicedParts = Array.Empty<int>();
 }
 
@@ -81,7 +82,7 @@ public sealed class PeerInfo
 
 public static class Protocol
 {
-    public const ushort Version = 6;
+    public const ushort Version = 7;
     public static bool ApplicationMessage(MessageKind kind) => kind >= MessageKind.Spawn && kind <= MessageKind.ArenaSpawn || kind >= MessageKind.ScenePrepare && kind <= MessageKind.NativeWaveState;
     public const uint Magic = 0x504D5342;
     public const int MaxPeers = 8, MaxParts = 20, MaxEntities = 512;
@@ -151,6 +152,7 @@ public static class Protocol
         String(w, e.CatalogId); String(w, e.SceneKey, 2048); w.Write(e.Height); String(w, e.Appearance, 60000); Pose(w, e.Pose);
         w.Write(e.Health); w.Write(e.MaxHealth); w.Write(e.Killed); w.Write((byte)e.SlicedParts.Length); foreach (int part in e.SlicedParts) w.Write(part);
         String(w,e.ItemState,24000);
+        w.Write(e.ProceduralNpc);
     }
     public static EntityDescriptor Descriptor(BinaryReader r)
     {
@@ -159,6 +161,8 @@ public static class Protocol
         if (count > MaxParts || !Finite(e.Health) || !Finite(e.MaxHealth) || e.MaxHealth <= 0 || e.MaxHealth > 1000000 || e.Health < 0 || e.Health > e.MaxHealth) throw new InvalidDataException("Invalid initial combat state");
         e.SlicedParts = new int[count]; for (int i = 0; i < count; i++) e.SlicedParts[i] = r.ReadInt32();
         e.ItemState=String(r,24000);
+        e.ProceduralNpc=r.ReadBoolean();
+        if(e.ProceduralNpc && (e.Kind!=EntityKind.Creature || e.Owner!=1))throw new InvalidDataException("Procedural NPCs must be host-owned creatures");
         if (e.Id == 0 || e.Owner == 0 || e.Epoch == 0 || e.Kind > EntityKind.Creature || !Finite(e.Height) || e.Height < .3f || e.Height > 4) throw new InvalidDataException("Invalid entity descriptor");
         return e;
     }

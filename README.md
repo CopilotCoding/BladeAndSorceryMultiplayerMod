@@ -4,7 +4,11 @@ PCVR mod using the native ThunderScript loader, native physical replicas and Har
 
 **Player setup and usage:** [mod/README.md](mod/README.md). The versioned ZIP ships that guide and START-HERE.txt at its top level. This README is for development.
 
-## v0.4.0 compatibility update
+## v0.5.0 procedural NPC API
+
+An opt-in public API inside the multiplayer DLL supports a separate host-only procedural AI mod. It exposes all human players, guarded native spawning, per-NPC controller handles, virtual hand target/grip replication and lifecycle notifications. Ordinary NPCs keep their native behavior. AI decisions and the host's virtual-hand implementation belong to the separate mod. Developer contract and example: [docs/PROCEDURAL-NPC-API.md](docs/PROCEDURAL-NPC-API.md). This version uses protocol 7 and requires matching builds on all peers.
+
+## Existing compatibility systems (v0.4)
 
 Shared mod file/load-order checks now run before admission. Native item custom data, wardrobe custom data and initial/late-join imbues are preserved; owner-driven item adapters provide bounded state and reliable events for scripted mods. Diagnostics includes content status, offline rescan and patch reports. Optional changed AI methods retain the other mod's code with a targeting warning. This is broad integration support, not a claim that arbitrary spells, guns, physics overhauls or custom skeletons work automatically. See [mod/COMPATIBILITY.md](mod/COMPATIBILITY.md) and [docs/MOD-COMPATIBILITY.md](docs/MOD-COMPATIBILITY.md).
 
@@ -29,10 +33,12 @@ References live in local Managed/ and must match the installed game. Never distr
 ```powershell
 ./scripts/Build.ps1
 ./scripts/Install-Mod.ps1
-./scripts/Package-Mod.ps1 -TestsSkippedByUser -RequireSharedWorld -RequireModCompatibility -RequireTeleport
+./scripts/Package-Mod.ps1 -TestsSkippedByUser -RequireProceduralNpc -RequireNativePve
 ```
 
 Installation refuses to replace the mod while the installed game is running or references differ. Packaging uses an allowlist, matching versioned player guides and exact assembly identities. -TestsSkippedByUser records that the broad PvP/sword-cut suites remain stopped at the user's request; it does not bypass the focused shared-world/native-PvE/menu evidence required by -RequireSharedWorld or the native compatibility report required by -RequireModCompatibility.
+
+The v0.5 release requires matching procedural-NPC and native-PvE reports. `-RequireSharedWorld`, `-RequireModCompatibility` and `-RequireTeleport` are additional gates when those suites are run for new binaries. Earlier passing v0.4 reports do not certify this build.
 
 Direct IP uses LiteNetLib UDP, default port 9050. Steam uses the game's initialized Steamworks.NET API and SteamNetworkingSockets, with public/friends/invite-only lobbies. Both share admission, ownership, reliable events, snapshots and 2-8 player capacity. Steam backend/relay and cross-account behavior still need real separate PCs.
 
@@ -50,6 +56,8 @@ The ignored .runtime/game checkout uses MockHmd and separate saves. Start/stop s
 ```
 
 Focused networking checks: tests/SteamSessionChecks (17 cases, including real UDP loopback, named content rejection, password/replay/build/capacity checks and travel agreement races/timeouts), plus tests/ProtocolTests. Native compatibility and settled-prop checks: `./scripts/Invoke-ModCompatibilityTests.ps1`. Actual loopback may require execution outside the restricted tool sandbox.
+
+Procedural API checks: `./scripts/Invoke-ProceduralNpcTests.ps1`. The synthetic rig freezes its source body, drives a real native sword and supplies a scripted native contact to verify damage routing/duplicate suppression. It is not the separate AI mod or a realistic parry/cut certification. Native NPC combat regression is separate.
 
 Native teleports use a persistent pose revision to discard interpolation history and snap remote bodies and carried items. `./scripts/Invoke-TeleportTests.ps1` checks long, short and rotation-only teleports in both directions; protocol checks cover dropped/reordered snapshots and revision rollover. Ordinary movement still interpolates.
 

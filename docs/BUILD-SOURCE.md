@@ -1,7 +1,7 @@
-# Building the v0.4.0 source release
+# Building the v0.5.0 source release
 
 This is the source archive, separate from the ready-to-install PCVR mod ZIP.
-For playing without compiling, use `BladeAndSorceryMultiplayer-v0.4.0-PCVR.zip`
+For playing without compiling, use `BladeAndSorceryMultiplayer-v0.5.0-PCVR.zip`
 and its START-HERE.txt. Player instructions are also in `mod/README.md`.
 
 ## Requirements
@@ -83,6 +83,15 @@ dotnet run --project ./tests/ProtocolTests -c Release
 These commands perform their own initial restore. They do not establish real
 headset combat quality or cross-account Steam connectivity.
 
+After building the distribution DLLs, compile the separate public-API consumer:
+
+```powershell
+dotnet build ./tests/ProceduralApiConsumer -c Release -m:1
+```
+
+This references artifacts/mod DLLs, not multiplayer internals. It checks the
+public C# surface and contains no AI implementation.
+
 For optional headset-free game automation, first build, then create the separate
 local test runtime from your own installed game:
 
@@ -117,6 +126,9 @@ For a compatibility release, `Package-Mod.ps1 -RequireModCompatibility` requires
 a passing native compatibility report matching both compiled DLLs. The reports
 are generated locally and are not bundled as historical proof for source builds.
 `-RequireTeleport` additionally requires matching native teleport checks.
+The v0.5 procedural integration release uses `-RequireProceduralNpc` and
+`-RequireNativePve` for its matching integration and ordinary-NPC regression
+reports. The public API contract is in docs/PROCEDURAL-NPC-API.md.
 
 See TODO.txt for unfinished features and known validation gaps. Third-party
 notices and licenses are in `mod/THIRD_PARTY_NOTICES.md` and `mod/licenses/`.

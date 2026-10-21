@@ -1,7 +1,7 @@
-# Mod compatibility — v0.4.0
+# Mod compatibility — v0.5.0
 
 Install the same gameplay mods, versions, files and load order on every PC.
-Everyone also needs this same multiplayer build. Protocol 6 cannot join older
+Everyone also needs this same multiplayer build. Protocol 7 cannot join older
 multiplayer versions. The mod does not download or distribute other mods.
 
 Before connecting, a background check hashes mod DLLs, bundles, native catalog
@@ -14,6 +14,15 @@ catalogs match the files. Diagnostics -> Rescan mods can refresh the file check
 while offline; it does not reload DLLs or assets.
 
 ## What this update improves
+
+v0.5 adds an opt-in procedural NPC API: a separate AI mod runs only on the host,
+queries every human player and supplies virtual hand targets/native grip joints.
+Clients replicate the physical NPC and weapon state through existing systems.
+Normal NPCs retain their native control and animation damage windows. This is
+integration support, not bundled AI or automatic AI-overhaul compatibility.
+Developer guide: docs/PROCEDURAL-NPC-API.md in the source archive.
+
+Existing v0.4 compatibility features:
 
 - Ordinary mod weapons continue to use their native catalog, colliders, grips,
   damage and penetration settings. No weapon-ID allowlist is imposed.

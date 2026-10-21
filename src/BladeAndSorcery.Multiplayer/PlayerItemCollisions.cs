@@ -9,7 +9,7 @@ internal sealed partial class GameWorld
     private readonly Dictionary<Item,HashSet<Creature>> playerItemCollisionOverrides = new Dictionary<Item,HashSet<Creature>>();
     internal void RefreshPlayerItemCollision(Item item)
     {
-        var holders=item.handlers.Select(h=>Find(h.creature)).Where(e=>e != null && !e.Owned && e.Descriptor.Kind == Core.EntityKind.Player).Select(e=>e!).Distinct().ToArray();
+        var holders=item.handlers.Select(h=>Find(h.creature)).Where(e=>e != null && (e.Descriptor.ProceduralNpc || !e.Owned && e.Descriptor.Kind==Core.EntityKind.Player)).Select(e=>e!).Distinct().ToArray();
         if (playerItemCollisionOverrides.TryGetValue(item,out var previous))
             foreach (var creature in previous)
                 if (creature != null)
@@ -22,7 +22,7 @@ internal sealed partial class GameWorld
             bool left=item.handlers.Any(h=>h.creature == creature && h.side == Side.Left);
             bool right=item.handlers.Any(h=>h.creature == creature && h.side == Side.Right);
             RagdollPart.Type exclusions;
-            if (holder.SourceSelfCollision)
+            if (holder.GripSelfCollision)
             {
                 var leftArm=RagdollPart.Type.LeftArm|RagdollPart.Type.LeftHand;
                 var rightArm=RagdollPart.Type.RightArm|RagdollPart.Type.RightHand;

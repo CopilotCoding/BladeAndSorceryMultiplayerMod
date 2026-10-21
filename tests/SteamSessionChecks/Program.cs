@@ -62,7 +62,7 @@ Run("challenge replay on another connection is rejected",()=>
     var replay=new MemoryTransport(wire){ReplaceHello=proof};using var b=new NetworkSession(replay);b.Join("","B","build",password:"secret");Pump(host,a,b);
     Check(a.Connected && !b.Connected && host.Peers.Count==2,"Old challenge response replayed");
 });
-Run("Direct IP protocol 6 Hello carries content manifest without challenge proof",()=>
+Run("Direct IP protocol 7 Hello carries content manifest without challenge proof",()=>
 {
     var wire=new MemoryTransport{PasswordChallenge=false};using var host=new NetworkSession(wire);host.Host("H","build");
     var clientWire=new MemoryTransport(wire){PasswordChallenge=false};using var client=new NetworkSession(clientWire);client.Join("","C","build");Pump(host,client);

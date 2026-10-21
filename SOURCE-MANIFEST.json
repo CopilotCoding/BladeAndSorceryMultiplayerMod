@@ -1,5 +1,5 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "kind": "source",
   "buildInstructions": "docs/BUILD-SOURCE.md",
   "files": [
@@ -15,18 +15,23 @@
     },
     {
       "path": "docs/BUILD-SOURCE.md",
-      "bytes": 5048,
-      "sha256": "B23ED1886455D3FEEABC7A0D310B8B3CD310833E30813A232E9A86BF7CAAD9B2"
+      "bytes": 5555,
+      "sha256": "5DE9E589E0E7CB66E679A621F6A600066E840B7C6BC1759FB9FAE6DE320C23D7"
     },
     {
       "path": "docs/IMPLEMENTATION.md",
-      "bytes": 34513,
-      "sha256": "EE6C6811B426DA15A43909CED13816823624A90B2245D5318325A2544F0257F6"
+      "bytes": 34690,
+      "sha256": "7DB32E1BD147D0598FCBB8E81A9BC77D46001C8CA1E549DC7E2CA0C0EDAEF31D"
     },
     {
       "path": "docs/MOD-COMPATIBILITY.md",
-      "bytes": 11974,
-      "sha256": "5AA7FCBCF014909FEBFD78E2A1031F84FF51E57A52ADF4A2EA11E62CB54A975C"
+      "bytes": 12188,
+      "sha256": "5AB09D13DD08C236B230C5D8B07FB4414376C0F84379F5B8255D22C794416613"
+    },
+    {
+      "path": "docs/PROCEDURAL-NPC-API.md",
+      "bytes": 14859,
+      "sha256": "6C01244D9F0C6EDED41CE564A2BE87243B89FEBB35554E5EA64C5E904E2836AA"
     },
     {
       "path": "docs/UPDATE-0.3.md",
@@ -35,8 +40,8 @@
     },
     {
       "path": "mod/COMPATIBILITY.md",
-      "bytes": 3688,
-      "sha256": "A883B5EF4432F6D7A6FDD15ACE09196778DAEA291A8AA87780CB4B864925C180"
+      "bytes": 4189,
+      "sha256": "7DCEC1690F24C4DAD0B7E8603826E7BA8F90B4E6F82ABCF1D73BDD65853D3954"
     },
     {
       "path": "mod/licenses/Harmony.txt",
@@ -50,18 +55,18 @@
     },
     {
       "path": "mod/manifest.json",
-      "bytes": 295,
-      "sha256": "2A041CD95B4129E199EE5CA2858A2E3E222EA7DF10F79F19C8BD9A47F9FC5A32"
+      "bytes": 306,
+      "sha256": "B0ADC6B2FE0D3433BA1B534EF7110938CA55A70595EE7B3043D73669CE2691CE"
     },
     {
       "path": "mod/README.md",
-      "bytes": 13660,
-      "sha256": "6AA35AA223A51BBB207FFBCE7608CFC65B66EB3E39FE6A46684E6018408B1544"
+      "bytes": 14022,
+      "sha256": "DCDC1039EBB0DEFAE763172F660AE0DDED09AA60DD6CEB64F7A2EAF80F49D0D6"
     },
     {
       "path": "mod/START-HERE.txt",
-      "bytes": 4132,
-      "sha256": "E02EF71AAE6FA0D65D5AEA19D21B8A969D26B08DF67BD84AA759BDC388446C90"
+      "bytes": 4375,
+      "sha256": "8A4BC88068744CF83D7059C451F39C1809149B38E088B08F71EA518FCDDE47AA"
     },
     {
       "path": "mod/THIRD_PARTY_NOTICES.md",
@@ -70,8 +75,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 7727,
-      "sha256": "ADE0CBCC347C5BE5A1FE1E6251303CE1758CB2D8A5DF31C239F436F8C9C49CAA"
+      "bytes": 8885,
+      "sha256": "BB49A6D2430460CABF15045FFEB404163DD6129BB64982049083D51476007F08"
     },
     {
       "path": "scripts/Assert-TestGripCollisions.ps1",
@@ -219,6 +224,11 @@
       "sha256": "9A1DA31A7E60AAFC89B7F763DC3F50D2997F8E7C1DD858D8826850FE6C36A1FB"
     },
     {
+      "path": "scripts/Invoke-ProceduralNpcTests.ps1",
+      "bytes": 10271,
+      "sha256": "EA1E186E0630FF5B2F8CB04BD554D7E9CEA2228A6229805E2DFA2B60BDBC0CA0"
+    },
+    {
       "path": "scripts/Invoke-PvpRegressionTests.ps1",
       "bytes": 8814,
       "sha256": "434DAF443D47042F3E00EC628CBAD0509034FC21EAF9D8788B81FD6D1F258370"
@@ -280,13 +290,13 @@
     },
     {
       "path": "scripts/Package-Mod.ps1",
-      "bytes": 12263,
-      "sha256": "E34F4C0CEBE89EA413DAA5362D1BD053B128ABBC4CEDDC50F36D253E8EFFBD73"
+      "bytes": 13145,
+      "sha256": "0E41ACE8A988A1A91282AFE6942086872699E7D6C98454EE08F9A57E810178EA"
     },
     {
       "path": "scripts/Package-Source.ps1",
-      "bytes": 3965,
-      "sha256": "18B6884CF712DAB73D17693F391AD802799094414D11B791629F55A780317B6D"
+      "bytes": 3994,
+      "sha256": "3ABD459548713EE815885525423F93535C45F94AF990A61188706176B0A5C2CB"
     },
     {
       "path": "scripts/Send-TestCommand.ps1",
@@ -316,7 +326,7 @@
     {
       "path": "src/BladeAndSorcery.Multiplayer.Core/BladeAndSorcery.Multiplayer.Core.csproj",
       "bytes": 322,
-      "sha256": "29C73B81D975C53B26BE785F16EF17FCF475A8B0C62790949D5F92CC585E0CDB"
+      "sha256": "CF38C1506C455FC4E892E315211E122D465D3A66F4112D8622FBB7F49BC14E6E"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer.Core/ContentManifest.cs",
@@ -330,8 +340,8 @@
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer.Core/Protocol.cs",
-      "bytes": 11540,
-      "sha256": "1556AC1D6DE844AB4A3F57ECED4FFE0E78C2C2ACA149FA894FB9BF7E35E70AD8"
+      "bytes": 11800,
+      "sha256": "037B07F03F10E82A5C4CCB635D0F2DC49B1F44BF8E14443F444C32AE830810F2"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer.Core/Replication.cs",
@@ -360,18 +370,18 @@
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/AutomatedDriver.cs",
-      "bytes": 67094,
-      "sha256": "B5B26A90FCAACE4A9F18F3D0AED3D807783C2EBC9F857A74784C9DA14BBC582F"
+      "bytes": 67305,
+      "sha256": "1205F8247D3A37EFD393D4E2C16B8C4DB7B1458F45B99C6BCE37086E6CBC093A"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/BladeAndSorcery.Multiplayer.csproj",
       "bytes": 1768,
-      "sha256": "17B56BAA394271B34424C249FC6129D8FBAFC62AE49F96D593D2B89A4088EBD3"
+      "sha256": "240D1458EEF86FBFC7EB1B09563855131B691B138E2BCF1F6C0B5552E960E242"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/BodyGrabbing.cs",
-      "bytes": 5520,
-      "sha256": "0C092CEB580CA10023B141F33663D65778AAF25E7F2489AECE24F8A9D95814A7"
+      "bytes": 5467,
+      "sha256": "14B0650586B04C1E297332318361A31F83DB7E5109F41DB33839C9533BF8F961"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/BreakableReplication.cs",
@@ -385,8 +395,8 @@
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/CombatPatches.cs",
-      "bytes": 9673,
-      "sha256": "A286185A8AC4CDC396C564C4CA4378067B1498B0AB066EC4B955160A0244AF12"
+      "bytes": 9534,
+      "sha256": "5E1E21475E34A8F4770AB1407D5BC57DA647B3AFA9EAEA4B8C7E14CF91E0A2A9"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/CompatibilityTestProbe.cs",
@@ -405,8 +415,8 @@
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/GameWorld.cs",
-      "bytes": 53854,
-      "sha256": "EC8732354D8B522C605A9D2CC40FB6CD8D6C05142F50C9B550E8430627CB2456"
+      "bytes": 54408,
+      "sha256": "D432F027631E8E562F8E730688834198CEF47C487862D415D8E04BEA3636F4F9"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/GripReconciliation.cs",
@@ -441,7 +451,7 @@
     {
       "path": "src/BladeAndSorcery.Multiplayer/ModCompatibility.cs",
       "bytes": 9411,
-      "sha256": "2A1A8CB54B56FFF0D404F0DDD25B594994CC0D897EE104219366E7F6FC7C8C9F"
+      "sha256": "8E51E4AA54F172FEFB5F4CFC7DD925567D615ED4B732F73879815B02CB002A4C"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/MultiplayerMenu.cs",
@@ -450,8 +460,8 @@
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/MultiplayerModApi.cs",
-      "bytes": 2669,
-      "sha256": "B7562FE10C1657E93B266C2121F9F49096A63EDB0BE238A9BF62B08EE102376A"
+      "bytes": 2677,
+      "sha256": "981A678A2C98EF14DA96339C349AAD17B9BBEE3EA042DC7A5545C9870DD9997F"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/MultiplayerScript.cs",
@@ -500,8 +510,8 @@
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/PlayerItemCollisions.cs",
-      "bytes": 2886,
-      "sha256": "51CBBB8BE5F6C7978DB6E77952A018A27367D6E04F0C546F010F5BB132FAF370"
+      "bytes": 2914,
+      "sha256": "EC7E6A35EF2456E11A10B7365B0FB1EC0B2C86F13E16C068D3DC9AB7604B3719"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/PlayerLimbDetachment.cs",
@@ -519,14 +529,34 @@
       "sha256": "8CF8249B8C124DB04619A51121BC836806F9AAAB0CA5504A3C8A38D1EE4CCCEF"
     },
     {
+      "path": "src/BladeAndSorcery.Multiplayer/ProceduralNpcApi.cs",
+      "bytes": 6668,
+      "sha256": "9951F598A1ADC44CC233110FA7EB04F3B6B77FF2C0CA73A905C27E608D7A0881"
+    },
+    {
+      "path": "src/BladeAndSorcery.Multiplayer/ProceduralNpcCombat.cs",
+      "bytes": 1818,
+      "sha256": "560EB36CF296C9567DF1ACF04581E27AD27B3423F87E3F6847CCDEC99E72CE7C"
+    },
+    {
+      "path": "src/BladeAndSorcery.Multiplayer/ProceduralNpcReplication.cs",
+      "bytes": 6569,
+      "sha256": "AC0FC77BBE6790537B1C16F5AB8EA67DE9FE73865D5A2D084B8AD318F9F14163"
+    },
+    {
+      "path": "src/BladeAndSorcery.Multiplayer/ProceduralNpcTestProbe.cs",
+      "bytes": 10538,
+      "sha256": "E43136B0ECA6D00946032CE747A7115B8C3BA7459F3E79FA5D78D5B4BE00F1AD"
+    },
+    {
       "path": "src/BladeAndSorcery.Multiplayer/RemotePlayerLifetime.cs",
       "bytes": 1824,
       "sha256": "A65D9694BB81F454276EA94C1F2C790BDD0ECA5F7ED543DD0C5C526CEFBA0FBB"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/ReplicatedEntity.cs",
-      "bytes": 28353,
-      "sha256": "D96A410ECD2B0AE0A57A1DE9897ABD040E50A3927B0CAE9BF8FAFAB58089DDFE"
+      "bytes": 28783,
+      "sha256": "BC8967D07E4C893FA3E50E51F60485E9544AD86CBFD31E70561FC8A63DEDBB89"
     },
     {
       "path": "src/BladeAndSorcery.Multiplayer/RuntimeControls.cs",
@@ -594,9 +624,19 @@
       "sha256": "257FA03E155B39C1DA1306F7B61A4C8DD100B6FFE5F5B76216507378881038AC"
     },
     {
+      "path": "tests/ProceduralApiConsumer/Consumer.cs",
+      "bytes": 2137,
+      "sha256": "A1B7452A961CC8AF3FD0C37458C98D10F78BD78890C21056E50360A5ADC3B91F"
+    },
+    {
+      "path": "tests/ProceduralApiConsumer/ProceduralApiConsumer.csproj",
+      "bytes": 891,
+      "sha256": "B15911AFD000295CFA976546E477F2EA6FA0C789C7004CEB6287578EBDEBE479"
+    },
+    {
       "path": "tests/ProtocolTests/Program.cs",
-      "bytes": 10483,
-      "sha256": "442DA021F0B9464FC98D09B650149673AA6C3B62783220F8163348FEC34F97BC"
+      "bytes": 11186,
+      "sha256": "C98089E79A94A6854EC1E889D67271636612B25631553C81DB085B36F8D517C9"
     },
     {
       "path": "tests/ProtocolTests/ProtocolTests.csproj",
@@ -606,7 +646,7 @@
     {
       "path": "tests/SteamSessionChecks/Program.cs",
       "bytes": 16058,
-      "sha256": "1D67991378AE40BD95D99A45BBEFDD941905AC9222443772D372B89CD20B3CF0"
+      "sha256": "FF328001C9AB77C214FCB57E5298C283A24B989424E2E0B547D81FCDC97A3A42"
     },
     {
       "path": "tests/SteamSessionChecks/SteamSessionChecks.csproj",
@@ -615,8 +655,8 @@
     },
     {
       "path": "TODO.txt",
-      "bytes": 6273,
-      "sha256": "0AD2C0734C77AA9CCC85CC482F224D43273C37CC97A0BB6C6FEA5B32D6ABB79D"
+      "bytes": 7539,
+      "sha256": "1852AF315B1D8CAFB613789C2F27C11BA32C6B30BF14E495176991E386D8478B"
     },
     {
       "path": "tools/RuntimePatcher/Program.cs",

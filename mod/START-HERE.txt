@@ -1,4 +1,8 @@
-BLADE & SORCERY MULTIPLAYER - v0.4.0
+BLADE & SORCERY MULTIPLAYER - v0.5.0
+
+This update adds an opt-in API for a SEPARATE procedural AI mod. No AI is bundled
+here and normal NPCs are unchanged. The separate AI mod must support this API.
+Everyone needs this same multiplayer build; protocol 7 cannot join older builds.
 
 EVERYONE: INSTALL FIRST
 Use the same gameplay mods, versions, files and load order on every PC.

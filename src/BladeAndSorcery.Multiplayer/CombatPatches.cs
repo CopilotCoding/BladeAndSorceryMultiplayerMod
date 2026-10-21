@@ -91,7 +91,7 @@ internal static class RemotePlayerBladeAnglePatch
         if (count != 2) throw new InvalidOperationException("Native blade-angle condition changed; refusing an incompatible combat patch");
     }
     private static RagdollHand? NpcHand(RagdollHand? hand)
-        => hand != null && MultiplayerRuntime.Instance?.World?.Find(hand.creature)?.Descriptor.Kind == BladeAndSorcery.Multiplayer.Core.EntityKind.Player ? null : hand;
+        => hand != null && MultiplayerRuntime.Instance?.World?.Find(hand.creature)?.UsesVirtualHands==true ? null : hand;
 }
 
 [HarmonyPatch(typeof(Damager), nameof(Damager.TryPerformSlice))]
@@ -141,7 +141,7 @@ internal static class RemotePlayerPenetrationPatch
     {
         var world = MultiplayerRuntime.Instance?.World;
         var holder = __instance.collisionHandler?.item?.mainHandler?.creature;
-        if (holder != null && world?.Find(holder)?.Descriptor.Kind == BladeAndSorcery.Multiplayer.Core.EntityKind.Player)
+        if (holder != null && world?.Find(holder)?.UsesVirtualHands==true)
             conditions &= ~Damager.PenetrationConditions.NotNPCHandler;
     }
 }
@@ -164,7 +164,7 @@ internal static class NetworkPlayerPressureStabPatch
         }
         if(count!=1) throw new InvalidOperationException("Native pressure-stab human predicate changed");
     }
-    private static bool IsHuman(Creature creature) => creature.player!=null || MultiplayerRuntime.Instance?.World?.Find(creature)?.Descriptor.Kind==BladeAndSorcery.Multiplayer.Core.EntityKind.Player;
+    private static bool IsHuman(Creature creature) => creature.player!=null || MultiplayerRuntime.Instance?.World?.Find(creature)?.UsesVirtualHands==true;
 }
 
 [HarmonyPatch(typeof(Damager), nameof(Damager.Penetrate))]

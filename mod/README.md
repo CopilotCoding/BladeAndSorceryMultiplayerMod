@@ -1,8 +1,10 @@
-# Blade & Sorcery Multiplayer — v0.4.0
+# Blade & Sorcery Multiplayer — v0.5.0
 
 Share Home, travel together, fight PvP, or use the normal wave book for co-op. Everyone installs this same ZIP; one person hosts and everyone else joins them.
 
-**Using other mods:** match gameplay mods, versions, files and load order on every PC. v0.4.0 checks content before joining and preserves supported native item/armor data. Special scripted abilities may need an adapter. See COMPATIBILITY.md inside the mod folder for coverage, diagnostics and limits. Older multiplayer versions cannot join this build.
+**v0.5.0:** adds an opt-in API for a separate procedural sword-fighting AI mod. No new AI is bundled here and normal NPC behavior stays native. The AI mod must explicitly integrate; installing an arbitrary AI overhaul does not enable this mode. All peers need this same build (protocol 7). Developers: see docs/PROCEDURAL-NPC-API.md in the separate source ZIP.
+
+**Using other mods:** match gameplay mods, versions, files and load order on every PC. v0.5.0 checks content before joining and preserves supported native item/armor data. Special scripted abilities may need an adapter. See COMPATIBILITY.md inside the mod folder for coverage, diagnostics and limits. Older multiplayer versions cannot join this build.
 
 ## 1. Install it — everyone does this
 

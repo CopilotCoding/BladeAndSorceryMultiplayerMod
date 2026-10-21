@@ -44,16 +44,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
     internal void Bind(Creature creature, bool remote)
     {
         Creature = creature; SpawnedRemotely = remote;
-        if(Descriptor.Kind==EntityKind.Player)
-            foreach(var handle in creature.ragdoll.parts.SelectMany(p=>p.handles))
-            {
-                bodyHandleData[handle]=handle.handleRagdollData;
-                var data=(HandleRagdollData)handle.handleRagdollData.Clone();
-                // Human tracking already supplies IK targets. NPC grapple IK
-                // replaces those targets and clears them on release.
-                data.useIK=false;data.moveStep=false;
-                handle.handleRagdollData=data;
-            }
+        if(UsesVirtualHands)PrepareVirtualHandHandles();
         if (remote) NextRemoteSliceAt = World.Now + .1;
         creature.OnKillEvent += OnKilled; creature.OnHealEvent += OnHealed; creature.OnDamageEvent += OnDamaged;
         creature.OnResurrectEvent += OnResurrected; creature.OnDespawnEvent += OnCreatureDespawn;
@@ -108,11 +99,11 @@ internal sealed partial class ReplicatedEntity : IDisposable
             part.physicBody.rigidBody.interpolation = RigidbodyInterpolation.Interpolate;
             part.physicBody.rigidBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         }
-        if (Descriptor.Kind == EntityKind.Player)
+        if (UsesVirtualHands)
         {
-            c.countTowardsMaxAlive=false;
+            if(Descriptor.Kind==EntityKind.Player)c.countTowardsMaxAlive=false;
             leftController = CreateController(c.handLeft); rightController = CreateController(c.handRight);
-            PrepareTrackedSkeleton();
+            if(Descriptor.Kind==EntityKind.Player)PrepareTrackedSkeleton();
         }
     }
     private Rigidbody CreateController(RagdollHand hand)
@@ -126,6 +117,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
     internal Pose HandTarget(Side side)
     {
         var hand=Creature!.GetHand(side);
+        if(Owned && ProceduralControl is {CanSimulate:true} control)return (side==Side.Left ? control.LeftTarget : control.RightTarget).NetPose();
         if (Owned && hand.playerHand != null) return hand.playerHand.grip.transform.NetPose();
         var state=Buffer.Sample(World.Now);
         return state != null ? (side == Side.Left ? state.LeftHand : state.RightHand) : hand.grip.NetPose();
@@ -199,7 +191,8 @@ internal sealed partial class ReplicatedEntity : IDisposable
         joint.angularXMotion=joint.angularYMotion=joint.angularZMotion=ConfigurableJointMotion.Free;
         UnityEngine.Object.Destroy(joint);
     }
-    internal Transform ControllerTarget(Side side) => (side==Side.Left ? leftController : rightController)?.transform ?? Creature!.GetHand(side).grip;
+    internal Transform ControllerTarget(Side side) => Owned && ProceduralControl is {CanSimulate:true} control ? side==Side.Left ? control.LeftTarget : control.RightTarget : (side==Side.Left ? leftController : rightController)?.transform ?? Creature!.GetHand(side).grip;
+    internal bool GripSelfCollision=>Owned ? Descriptor.ProceduralNpc ? Creature!.ragdoll.allowSelfDamage : Player.selfCollision : SourceSelfCollision;
     internal EntitySnapshot Capture(double now)
     {
         var identity = new Pose(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
@@ -212,11 +205,13 @@ internal sealed partial class ReplicatedEntity : IDisposable
             s.Root.Pose = c.transform.NetPose();
             s.Head = c == Player.local?.creature ? Player.local.head.transform.NetPose() : c.ragdoll.headPart.transform.NetPose();
             bool local = c == Player.local?.creature;
-            s.LeftHand = local ? Player.local!.handLeft.grip.transform.NetPose() : c.handLeft.grip.NetPose();
-            s.RightHand = local ? Player.local!.handRight.grip.transform.NetPose() : c.handRight.grip.NetPose();
-            if (local) { s.LeftGrip = CaptureGrip(c.handLeft); s.RightGrip = CaptureGrip(c.handRight); }
+            s.LeftHand = Descriptor.ProceduralNpc ? HandTarget(Side.Left) : local ? Player.local!.handLeft.grip.transform.NetPose() : c.handLeft.grip.NetPose();
+            s.RightHand = Descriptor.ProceduralNpc ? HandTarget(Side.Right) : local ? Player.local!.handRight.grip.transform.NetPose() : c.handRight.grip.NetPose();
+            if (UsesVirtualHands) { s.LeftGrip = CaptureGrip(c.handLeft); s.RightGrip = CaptureGrip(c.handRight); }
             s.Parts = c.ragdoll.parts.Take(Protocol.MaxParts).Select(p => GameMath.Capture(p.physicBody, GameMath.PartKey(p))).ToArray();
-            s.Flags = (ushort)((c.isKilled ? 1 : 0) | (c.handLeft.grabbedHandle ? 2 : 0) | (c.handRight.grabbedHandle ? 4 : 0) | (c.brain.canDamage ? 8 : 0) | (c.state == Creature.State.Alive ? 16 : 0) | (c.currentLocomotion.isGrounded ? 32 : 0) | (local && Player.selfCollision ? 64 : 0) | (c.brain.isAttacking ? 128 : 0) | (Ragdoll.IsPhysicalState(c.ragdoll.state) ? 256 : 0) | (local && Player.IsInvincible ? 512 : 0));
+            bool canDamage=Descriptor.ProceduralNpc ? ProceduralCanDamage : c.brain.canDamage;
+            bool selfCollision=Descriptor.ProceduralNpc ? c.ragdoll.allowSelfDamage : local && Player.selfCollision;
+            s.Flags = (ushort)((c.isKilled ? 1 : 0) | (c.handLeft.grabbedHandle ? 2 : 0) | (c.handRight.grabbedHandle ? 4 : 0) | (canDamage ? 8 : 0) | (c.state == Creature.State.Alive ? 16 : 0) | (c.currentLocomotion.isGrounded ? 32 : 0) | (selfCollision ? 64 : 0) | (c.brain.isAttacking ? 128 : 0) | (Ragdoll.IsPhysicalState(c.ragdoll.state) ? 256 : 0) | (local && Player.IsInvincible ? 512 : 0));
         }
         return s;
     }
@@ -287,8 +282,9 @@ internal sealed partial class ReplicatedEntity : IDisposable
             SourceAlive = (s.Flags & 16) != 0;
             SourceInvincible = (s.Flags & 512) != 0;
             c.brain.canDamage = Descriptor.Kind == EntityKind.Player || (s.Flags & 8) != 0;
+            SourceProceduralCanDamage=(s.Flags&8)!=0;
             if (Descriptor.Kind == EntityKind.Creature) c.brain.isAttacking = (s.Flags & 128) != 0;
-            if (Descriptor.Kind == EntityKind.Player && SourceSelfCollision != ((s.Flags & 64) != 0))
+            if (UsesVirtualHands && SourceSelfCollision != ((s.Flags & 64) != 0))
             {
                 SourceSelfCollision=(s.Flags & 64) != 0;
                 c.handLeft.grabbedHandle?.item?.RefreshCollision(); c.handRight.grabbedHandle?.item?.RefreshCollision();
@@ -330,6 +326,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
         // Every owner must schedule its own respawn here. The host also records
         // this local death's score; other deaths arrive through ApplyAction.
         World.Match.OnDeath(this, hit);
+        ProceduralControl?.Stop(ProceduralNpcStopReason.Killed);
     }
     private void OnHealed(float amount, Creature healer, EventTime time) { if (time == EventTime.OnEnd && Owned && !World.Applying) World.SendHealth(this); }
     private void OnDamaged(CollisionInstance hit, EventTime time) { if (time == EventTime.OnEnd && Owned && !World.Applying) World.SendHealth(this); }
@@ -379,7 +376,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
     }
     private bool BodyGripControls(RagdollPart part)
     {
-        if(Descriptor.Kind!=EntityKind.Player) return false;
+        if(!UsesVirtualHands) return false;
         // A native grapple controls this limb. Pose springs on the same limb
         // would fight its grip joint and inject energy into the whole skeleton.
         for(var ancestor=part;ancestor!=null;ancestor=ancestor.parentPart)
@@ -395,6 +392,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
     private void OnCreatureDespawn(EventTime time) { if (time == EventTime.OnStart && Owned && !World.Applying) World.Despawn(this); }
     public void Dispose()
     {
+        ProceduralControl?.Stop(World.ProceduralRemovalReason);
         detachedPlayerParts.Clear(); detachedPlayerRoots.Clear();
         RestoreTrackedSkeleton();
         ClearPhysicalHandGrip(Side.Left);ClearPhysicalHandGrip(Side.Right);

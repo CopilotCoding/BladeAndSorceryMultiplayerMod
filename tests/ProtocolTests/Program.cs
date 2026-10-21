@@ -39,6 +39,14 @@ Test("malformed payload rejection", () =>
     Reject(() => { using var r = Protocol.Read(Protocol.Encode(w => { w.Write(float.NaN); w.Write(0f); w.Write(0f); })); Protocol.Vector(r); });
     Reject(() => { using var r = Protocol.Read(Protocol.Encode(w => { Protocol.Vector(w, Vector3.Zero); for (int i = 0; i < 4; i++) w.Write(0f); })); Protocol.Pose(r); });
 });
+Test("procedural mode round trips only for host-owned NPC descriptors", () =>
+{
+    var d=new EntityDescriptor{Id=0x100000001,Owner=1,Epoch=1,Kind=EntityKind.Creature,CatalogId="HumanMale",Pose=pose,ProceduralNpc=true};
+    EntityDescriptor Read(){using var r=Protocol.Read(Protocol.Encode(w=>Protocol.Descriptor(w,d)));var value=Protocol.Descriptor(r);Protocol.End(r);return value;}
+    Check(Read().ProceduralNpc,"Late join loses procedural mode");
+    d.Owner=2;Reject(()=>Read());d.Owner=1;d.Kind=EntityKind.Player;Reject(()=>Read());d.Kind=EntityKind.Item;Reject(()=>Read());
+    d.Kind=EntityKind.Creature;d.ProceduralNpc=false;Check(!Read().ProceduralNpc,"Ordinary NPC opted in implicitly");
+});
 Test("ownership transfer rejects stale writers and competing requests", () =>
 {
     var table = new OwnershipTable(); table.Add(new EntityDescriptor { Id = 42, Owner = 1, Epoch = 1 });

@@ -102,6 +102,7 @@ internal sealed class AutomatedDriver : MonoBehaviour
     private object? Execute(JObject c, string response)
     {
         string op = (string?)c["op"] ?? throw new InvalidDataException("Command needs op");
+        if(op.StartsWith("procedural-",StringComparison.Ordinal))return ProceduralNpcTestProbe.Execute(runtime,c,result=>Respond(response,true,result));
         if(op.StartsWith("compatibility-",StringComparison.Ordinal))return CompatibilityProbe.Execute(runtime,c,result=>Respond(response,true,result));
         if(op=="world-audit")return new {
             connected=runtime.Session?.Connected==true,level=Level.current?.data?.id,seed=Level.seed,revision=runtime.Session?.WorldRevision,time=Time.realtimeSinceStartupAsDouble,corrections=runtime.World?.SettledItemCorrections ?? 0,recoveredItems=runtime.World?.RecoveredItemReplicas ?? 0,suppressedDespawns=runtime.World?.SuppressedItemDespawns ?? 0,
@@ -682,6 +683,7 @@ public sealed partial class MultiplayerRuntime
                 dead = e.Creature?.isKilled, bodies = e.Creature?.ragdoll.parts.Count,
                 nativeWaveMember=e.Creature!=null && World.NativeWaveMember(e.Creature),
                 initialPoseSnapped=e.InitialPoseSnapped,
+                proceduralNpc=e.Descriptor.ProceduralNpc,
                 poseRevision=e.PoseRevision,teleportSnaps=e.TeleportSnaps,teleportAudit=e.LastTeleportAudit,
                 ai = e.Creature != null ? new {
                     enabled=e.Creature.brain.enabled, active=e.Creature.brain.instance?.isActive,

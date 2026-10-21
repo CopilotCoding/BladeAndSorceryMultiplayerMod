@@ -1,7 +1,7 @@
 {
   "Name": "Blade & Sorcery Multiplayer",
-  "Description": "PCVR multiplayer with mod-content admission checks, native item/armor custom state and scripted-item adapters; shared Home, travel, PvP and wave-book co-op.",
+  "Description": "PCVR multiplayer with opt-in host procedural NPC/virtual-hand integration, mod-content checks and scripted-item adapters; shared Home, travel, PvP and wave-book co-op.",
   "Author": "ZSoul",
-  "ModVersion": "0.4.0",
+  "ModVersion": "0.5.0",
   "GameVersion": "1.0.0.0"
 }

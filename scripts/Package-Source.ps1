@@ -6,7 +6,7 @@ if ($version -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') { throw 'Invalid s
 $packageName = "BladeAndSorceryMultiplayer-v$version-Source"
 $relativeFiles = [Collections.Generic.List[string]]::new()
 foreach ($relative in @('.gitignore','Directory.Build.props','README.md','TODO.txt',
-    'docs/BUILD-SOURCE.md','docs/IMPLEMENTATION.md','docs/UPDATE-0.3.md','docs/MOD-COMPATIBILITY.md',
+    'docs/BUILD-SOURCE.md','docs/IMPLEMENTATION.md','docs/UPDATE-0.3.md','docs/MOD-COMPATIBILITY.md','docs/PROCEDURAL-NPC-API.md',
     'mod/manifest.json','mod/README.md','mod/START-HERE.txt','mod/THIRD_PARTY_NOTICES.md','mod/COMPATIBILITY.md',
     'mod/licenses/Harmony.txt','mod/licenses/LiteNetLib.txt')) {
     if (!(Test-Path -LiteralPath (Join-Path $workspace $relative) -PathType Leaf)) { throw "Missing source file: $relative" }
