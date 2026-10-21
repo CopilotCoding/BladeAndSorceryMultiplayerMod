@@ -6,7 +6,7 @@ $gameExe = Join-Path $gameRoot 'BladeAndSorcery.exe'
 $gameAssembly = Join-Path $gameRoot 'BladeAndSorcery_Data\Managed\ThunderRoad.dll'
 if (!(Test-Path -LiteralPath $gameExe) -or !(Test-Path -LiteralPath $gameAssembly)) { throw 'Expected a PCVR Blade & Sorcery installation.' }
 $source = Join-Path $workspace 'artifacts\mod\BladeAndSorceryMultiplayer'
-foreach ($required in @('manifest.json','BladeAndSorcery.Multiplayer.dll','BladeAndSorcery.Multiplayer.Core.dll','LiteNetLib.dll','0Harmony.dll','licenses\Harmony.txt','licenses\LiteNetLib.txt')) {
+foreach ($required in @('manifest.json','COMPATIBILITY.md','BladeAndSorcery.Multiplayer.dll','BladeAndSorcery.Multiplayer.Core.dll','LiteNetLib.dll','0Harmony.dll','licenses\Harmony.txt','licenses\LiteNetLib.txt')) {
     if (!(Test-Path -LiteralPath (Join-Path $source $required))) { throw "Build artifact is incomplete: $required" }
 }
 if ((Get-FileHash -LiteralPath $gameAssembly).Hash -ne (Get-FileHash -LiteralPath (Join-Path $workspace 'Managed\ThunderRoad.dll')).Hash) { throw 'Installed ThunderRoad.dll differs from the build references. Update the references and rebuild for this game version first.' }

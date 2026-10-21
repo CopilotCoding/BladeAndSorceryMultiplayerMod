@@ -1,9 +1,9 @@
-param([switch]$RequireVerified,[switch]$TestsSkippedByUser,[switch]$RequireSharedWorld)
+param([switch]$RequireVerified,[switch]$TestsSkippedByUser,[switch]$RequireSharedWorld,[switch]$RequireModCompatibility,[switch]$RequireTeleport)
 $ErrorActionPreference='Stop'
 if($RequireVerified -and $TestsSkippedByUser){throw 'Choose verified packaging or explicitly skipped checks, not both.'}
 $workspace=Split-Path -Parent $PSScriptRoot
 $source=Join-Path $workspace 'artifacts\mod\BladeAndSorceryMultiplayer'
-$required=@('manifest.json','README.md','THIRD_PARTY_NOTICES.md','BladeAndSorcery.Multiplayer.dll','BladeAndSorcery.Multiplayer.Core.dll','LiteNetLib.dll','0Harmony.dll','licenses\Harmony.txt','licenses\LiteNetLib.txt')
+$required=@('manifest.json','README.md','COMPATIBILITY.md','THIRD_PARTY_NOTICES.md','BladeAndSorcery.Multiplayer.dll','BladeAndSorcery.Multiplayer.Core.dll','LiteNetLib.dll','0Harmony.dll','licenses\Harmony.txt','licenses\LiteNetLib.txt')
 $allowed=$required+@('BladeAndSorcery.Multiplayer.pdb','BladeAndSorcery.Multiplayer.Core.pdb')
 foreach($name in $required){if(!(Test-Path -LiteralPath (Join-Path $source $name))){throw "Missing packaged file: $name"}}
 foreach($file in Get-ChildItem -LiteralPath $source -File -Recurse){
@@ -11,6 +11,7 @@ foreach($file in Get-ChildItem -LiteralPath $source -File -Recurse){
     if($relative -notin $allowed){throw "Unexpected distribution file: $relative"}
 }
 Copy-Item -LiteralPath (Join-Path $workspace 'mod\README.md') -Destination (Join-Path $source 'README.md') -Force
+Copy-Item -LiteralPath (Join-Path $workspace 'mod\COMPATIBILITY.md') -Destination (Join-Path $source 'COMPATIBILITY.md') -Force
 Copy-Item -LiteralPath (Join-Path $workspace 'mod\manifest.json') -Destination (Join-Path $source 'manifest.json') -Force
 $modMvid=[Reflection.Assembly]::LoadFile((Join-Path $source 'BladeAndSorcery.Multiplayer.dll')).ManifestModule.ModuleVersionId.ToString('N')
 $coreMvid=[Reflection.Assembly]::LoadFile((Join-Path $source 'BladeAndSorcery.Multiplayer.Core.dll')).ManifestModule.ModuleVersionId.ToString('N')
@@ -18,7 +19,7 @@ $verification=$null
 $steamVerification=$null
 $sessionVerification=$null
 $focusedVerification=@{}
-foreach($focusedName in @('shared-world','native-pve','session-ui','native-ranged')){
+foreach($focusedName in @('shared-world','native-pve','session-ui','native-ranged','mod-compatibility','teleport')){
     $focusedPath=Join-Path $workspace "artifacts\$focusedName-report.json"
     if(!(Test-Path -LiteralPath $focusedPath)){continue}
     $focused=Get-Content -LiteralPath $focusedPath -Raw|ConvertFrom-Json
@@ -28,6 +29,8 @@ foreach($focusedName in @('shared-world','native-pve','session-ui','native-range
     }
 }
 if($RequireSharedWorld){foreach($focusedName in @('shared-world','native-pve','session-ui','native-ranged')){if(!$focusedVerification.ContainsKey($focusedName)){throw "Passing $focusedName report must match both packaged binaries."}}}
+if($RequireModCompatibility -and !$focusedVerification.ContainsKey('mod-compatibility')){throw 'Passing mod-compatibility report must match both packaged binaries.'}
+if($RequireTeleport -and !$focusedVerification.ContainsKey('teleport')){throw 'Passing native teleport report must match both packaged binaries.'}
 $steamReportPath=Join-Path $workspace 'artifacts\steam-capability-report.json'
 if(Test-Path -LiteralPath $steamReportPath){
     $steam=Get-Content -LiteralPath $steamReportPath -Raw|ConvertFrom-Json

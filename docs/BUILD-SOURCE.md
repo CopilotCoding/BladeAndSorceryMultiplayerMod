@@ -1,7 +1,7 @@
-# Building the v0.3.0 source release
+# Building the v0.4.0 source release
 
 This is the source archive, separate from the ready-to-install PCVR mod ZIP.
-For playing without compiling, use `BladeAndSorceryMultiplayer-v0.3.0-PCVR.zip`
+For playing without compiling, use `BladeAndSorceryMultiplayer-v0.4.0-PCVR.zip`
 and its START-HERE.txt. Player instructions are also in `mod/README.md`.
 
 ## Requirements
@@ -112,6 +112,11 @@ includes a SHA-256 manifest, and verifies every archived file against its source
 Output: `artifacts/BladeAndSorceryMultiplayer-v<version>-Source.zip`.
 The separate Package-Mod.ps1 produces player ZIPs and has validation requirements
 described in the root README.
+
+For a compatibility release, `Package-Mod.ps1 -RequireModCompatibility` requires
+a passing native compatibility report matching both compiled DLLs. The reports
+are generated locally and are not bundled as historical proof for source builds.
+`-RequireTeleport` additionally requires matching native teleport checks.
 
 See TODO.txt for unfinished features and known validation gaps. Third-party
 notices and licenses are in `mod/THIRD_PARTY_NOTICES.md` and `mod/licenses/`.

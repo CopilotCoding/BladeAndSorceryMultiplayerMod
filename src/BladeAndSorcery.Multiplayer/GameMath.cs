@@ -58,9 +58,13 @@ internal static class GameMath
     internal static Quaternion Game(this NQuaternion q) => new Quaternion(q.X, q.Y, q.Z, q.W);
     internal static Pose NetPose(this Transform t) => new Pose(t.position.Net(), t.rotation.Net());
     internal static BodyState Capture(PhysicBody body, int part = 0) => new BodyState { Part = part, Pose = body.transform.NetPose(), Velocity = body.velocity.Net(), AngularVelocity = body.angularVelocity.Net() };
+    internal static BodyState Capture(Rigidbody body,int part=0)=>new BodyState{Part=part,Pose=body.transform.NetPose(),Velocity=body.velocity.Net(),AngularVelocity=body.angularVelocity.Net()};
     internal static void Drive(PhysicBody body, BodyState target, float gain = 60f, float force = 160f)
     {
-        var rb = body.rigidBody;
+        Drive(body.rigidBody,target,gain,force);
+    }
+    internal static void Drive(Rigidbody rb,BodyState target,float gain=60f,float force=160f)
+    {
         if (!rb) return;
         if (rb.isKinematic)
         {

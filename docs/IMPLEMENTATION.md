@@ -1,6 +1,8 @@
 # Implementation record
 
-Current v0.3.0 architecture and exact-build evidence are recorded in [UPDATE-0.3.md](UPDATE-0.3.md). Sections below retain earlier development results and limitations for their stated versions; they are not receipts for newer binaries.
+The v0.4.0 compatibility architecture is in [MOD-COMPATIBILITY.md](MOD-COMPATIBILITY.md). Earlier exact-build receipts below apply only to their recorded binaries.
+
+Previous v0.3.0 architecture and exact-build evidence are recorded in [UPDATE-0.3.md](UPDATE-0.3.md). Sections below retain earlier development results and limitations for their stated versions; they are not receipts for newer binaries.
 
 Target: PCVR only, Valve Index and Quest connected to PC. Physical PvP first; PvE extends the same systems. Native combat behavior and inactive-session single-player isolation are requirements, not assumed guarantees.
 

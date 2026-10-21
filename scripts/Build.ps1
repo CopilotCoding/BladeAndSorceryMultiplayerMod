@@ -16,6 +16,7 @@ $destination = Join-Path $workspace 'artifacts\mod\BladeAndSorceryMultiplayer'
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $workspace 'mod\manifest.json') -Destination $destination -Force
 Copy-Item -LiteralPath (Join-Path $workspace 'mod\README.md') -Destination $destination -Force
+Copy-Item -LiteralPath (Join-Path $workspace 'mod\COMPATIBILITY.md') -Destination $destination -Force
 Copy-Item -LiteralPath (Join-Path $workspace 'mod\THIRD_PARTY_NOTICES.md') -Destination $destination -Force
 Copy-Item -LiteralPath (Join-Path $workspace 'mod\licenses') -Destination $destination -Recurse -Force
 $allowedAssemblies = @('BladeAndSorcery.Multiplayer.dll','BladeAndSorcery.Multiplayer.pdb','BladeAndSorcery.Multiplayer.Core.dll','BladeAndSorcery.Multiplayer.Core.pdb','LiteNetLib.dll','0Harmony.dll')
@@ -26,7 +27,7 @@ foreach ($assembly in $allowedAssemblies) {
 }
 # The netstandard Harmony package is reference-only; Unity Mono needs its runtime build.
 Copy-Item -LiteralPath (Join-Path $env:NUGET_PACKAGES 'lib.harmony\2.4.1\lib\net472\0Harmony.dll') -Destination $destination -Force
-$allowedFiles = $allowedAssemblies + @('manifest.json','README.md','THIRD_PARTY_NOTICES.md','licenses\Harmony.txt','licenses\LiteNetLib.txt')
+$allowedFiles = $allowedAssemblies + @('manifest.json','README.md','COMPATIBILITY.md','THIRD_PARTY_NOTICES.md','licenses\Harmony.txt','licenses\LiteNetLib.txt')
 foreach ($file in Get-ChildItem -LiteralPath $destination -File -Recurse) {
     $relative = [IO.Path]::GetRelativePath($destination,$file.FullName)
     if ($relative -notin $allowedFiles) {

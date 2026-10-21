@@ -56,7 +56,9 @@ internal sealed class UdpSessionTransport : ISessionTransport
     {
         listener.ConnectionRequestEvent+=request=>{if(CanAccept?.Invoke()!=true){request.Reject();return;}request.AcceptIfKey(key);};
         listener.PeerConnectedEvent+=native=>{var peer=new Peer(native);peers[native]=peer;Connected?.Invoke(peer);};
-        listener.PeerDisconnectedEvent+=(native,info)=>{if(peers.TryGetValue(native,out var peer)){peers.Remove(native);Disconnected?.Invoke(peer,info.Reason.ToString());}};
+        // LiteNetLib also reports refused connection attempts before PeerConnected.
+        // Surface those exits so admission failures cannot leave the UI connecting forever.
+        listener.PeerDisconnectedEvent+=(native,info)=>{if(!peers.TryGetValue(native,out var peer))peer=new Peer(native);peers.Remove(native);Disconnected?.Invoke(peer,info.Reason.ToString());};
         listener.NetworkErrorEvent+=(_,error)=>Error?.Invoke("Socket error: "+error);
         listener.NetworkReceiveEvent+=(native,reader,channel,delivery)=>
         {

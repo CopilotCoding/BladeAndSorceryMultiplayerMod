@@ -102,6 +102,27 @@ internal sealed class AutomatedDriver : MonoBehaviour
     private object? Execute(JObject c, string response)
     {
         string op = (string?)c["op"] ?? throw new InvalidDataException("Command needs op");
+        if(op.StartsWith("compatibility-",StringComparison.Ordinal))return CompatibilityProbe.Execute(runtime,c,result=>Respond(response,true,result));
+        if(op=="world-audit")return new {
+            connected=runtime.Session?.Connected==true,level=Level.current?.data?.id,seed=Level.seed,revision=runtime.Session?.WorldRevision,time=Time.realtimeSinceStartupAsDouble,corrections=runtime.World?.SettledItemCorrections ?? 0,recoveredItems=runtime.World?.RecoveredItemReplicas ?? 0,suppressedDespawns=runtime.World?.SuppressedItemDespawns ?? 0,
+            items=Item.allActive.Where(item=>item!=null && item.loaded && item.data!=null).Select(item=>{var entity=runtime.World?.Find(item);var body=item.physicBody.rigidBody;return new {
+                id=entity?.Descriptor.Id.ToString(),catalog=item.data.id,owner=entity?.Descriptor.Owner,epoch=entity?.Descriptor.Epoch,sceneKey=GameMath.SceneItemKey(item),
+                position=new[]{item.transform.position.x,item.transform.position.y,item.transform.position.z},rotation=new[]{item.transform.rotation.x,item.transform.rotation.y,item.transform.rotation.z,item.transform.rotation.w},
+                velocity=new[]{body.velocity.x,body.velocity.y,body.velocity.z},angular=new[]{body.angularVelocity.x,body.angularVelocity.y,body.angularVelocity.z},
+                held=item.handlers.Count,holstered=item.holder!=null,penetrating=item.isPenetrating,item.worldAttached,body.isKinematic,sleeping=body.IsSleeping(),owned=entity?.Owned,
+                snapshotAge=entity!=null && !entity.Owned ? runtime.World!.Now-entity.LastArrival : 0
+                ,linkedBodies=entity?.AttachedBodyPaths(),sourceBodies=entity?.SourceBodyPaths
+            };}).ToArray(),
+            unmanagedBodies=UnityEngine.Object.FindObjectsOfType<Rigidbody>().Where(b=>!b.isKinematic && b.gameObject.scene.name==Level.current?.gameObject.scene.name && b.GetComponentInParent<Item>()==null && b.GetComponentInParent<RagdollPart>()==null)
+                .Select(b=>new{key=GameMath.ScenePath(b.transform),position=new[]{b.position.x,b.position.y,b.position.z}}).ToArray()
+        };
+        if(op=="world-perturb-replicas")
+        {
+            if(runtime.World==null)throw new InvalidOperationException("Connect first");
+            var candidates=runtime.World.Entities.Values.Where(e=>!e.Owned && e.Item!=null && e.Item.handlers.Count==0 && e.Item.holder==null && !e.Item.isPenetrating && !e.Item.worldAttached && e.Descriptor.SceneKey.StartsWith("spawner:",StringComparison.Ordinal)).Take(8).ToArray();
+            foreach(var entity in candidates){var body=entity.Item!.physicBody.rigidBody;body.position+=new Vector3(.35f,.18f,.2f);body.rotation=Quaternion.AngleAxis(65,Vector3.up)*body.rotation;if(!body.isKinematic){body.velocity=Vector3.zero;body.angularVelocity=Vector3.zero;}}
+            return new{count=candidates.Length,ids=candidates.Select(e=>e.Descriptor.Id.ToString()).ToArray()};
+        }
         switch (op)
         {
             case "test-caption": testCaption=((string?)c["text"] ?? "").Substring(0,Math.Min(180,((string?)c["text"] ?? "").Length));return "test caption updated";
@@ -419,7 +440,11 @@ internal sealed class AutomatedDriver : MonoBehaviour
                 return "native NPC action applied";
             case "camera":
                 if (Spectator.local == null) throw new InvalidOperationException("Native spectator camera unavailable");
-                Spectator.local.SetViewFree(); return "native free spectator enabled";
+                Spectator.local.SetViewFree();
+                if(c["position"]!=null)Spectator.local.transform.position=Vector(c["position"]!);
+                if(c["rotation"]!=null)Spectator.local.transform.rotation=Quaternion.Euler(Vector(c["rotation"]!));
+                if(c["fov"]!=null)Spectator.local.cam.fieldOfView=(float)c["fov"]!;
+                return "native free spectator enabled";
             case "item-velocity":
                 if (runtime.World == null || !ulong.TryParse((string?)c["entity"], out var entityId) || !runtime.World.Entities.TryGetValue(entityId, out var itemEntity) || !itemEntity.Owned || itemEntity.Item == null) throw new InvalidOperationException("Expected a locally owned item");
                 itemEntity.Item.physicBody.isKinematic = false; itemEntity.Item.physicBody.velocity = Vector(c["velocity"]!); return "native item velocity set";
@@ -657,6 +682,7 @@ public sealed partial class MultiplayerRuntime
                 dead = e.Creature?.isKilled, bodies = e.Creature?.ragdoll.parts.Count,
                 nativeWaveMember=e.Creature!=null && World.NativeWaveMember(e.Creature),
                 initialPoseSnapped=e.InitialPoseSnapped,
+                poseRevision=e.PoseRevision,teleportSnaps=e.TeleportSnaps,teleportAudit=e.LastTeleportAudit,
                 ai = e.Creature != null ? new {
                     enabled=e.Creature.brain.enabled, active=e.Creature.brain.instance?.isActive,
                     brain=e.Creature.brain.instance?.id, state=e.Creature.brain.state.ToString(),

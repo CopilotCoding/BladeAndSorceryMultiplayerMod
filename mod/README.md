@@ -1,6 +1,8 @@
-# Blade & Sorcery Multiplayer — v0.3.0
+# Blade & Sorcery Multiplayer — v0.4.0
 
 Share Home, travel together, fight PvP, or use the normal wave book for co-op. Everyone installs this same ZIP; one person hosts and everyone else joins them.
+
+**Using other mods:** match gameplay mods, versions, files and load order on every PC. v0.4.0 checks content before joining and preserves supported native item/armor data. Special scripted abilities may need an adapter. See COMPATIBILITY.md inside the mod folder for coverage, diagnostics and limits. Older multiplayer versions cannot join this build.
 
 ## 1. Install it — everyone does this
 
@@ -123,7 +125,7 @@ The old **Experimental sword wave** button is under **Diagnostics** for developm
 | **Direct IP** | Address/UDP port, edit/paste, Host Direct IP, Join Direct IP. |
 | **Player & hosting** | Your name, optional password for either method, next host's player limit. |
 | **Play** | World/wave status, match rules, friendly fire, survive limb loss, respawn. |
-| **Diagnostics** | Record/save combat captures and the experimental legacy wave. |
+| **Diagnostics** | Mod compatibility status, offline rescan, combat captures and the experimental legacy wave. |
 
 F8 opens a desktop panel with the same pages. The VR menu works without it.
 
@@ -136,6 +138,7 @@ F8 opens a desktop panel with the same pages. The VR menu works without it.
 | Invitation does nothing | Load Home or Arena first, leave any existing session, then press **Join invited Steam lobby**. Check the password if required. |
 | Direct IP will not join | Confirm the host says **Hosting**, both sides use the same UDP port, the password matches, and the address belongs to the host. For Internet play, check the host's UDP port forward and firewall. |
 | A different-build error appears | Everyone must use the same game build and this same mod ZIP. Replace older copies and restart the game. |
+| A missing/different/client-only mod error appears | Match the named gameplay mods, versions, files and load order on every PC, then restart. Diagnostics shows the content-check status. Read COMPATIBILITY.md for local-only declarations and scripted-ability limits. |
 | Connected, but you cannot find each other | Check the player count and **Play → World status**. Wait for loading and a safe arrival. If necessary, leave and rejoin the host's current map. |
 | You cannot damage your friend | Check that the host selected **Free for all**, rather than Co-op or a mode that protects teammates. |
 | Someone wants to host again after a session with broken props | Leave and reload the current map before creating the next session. |

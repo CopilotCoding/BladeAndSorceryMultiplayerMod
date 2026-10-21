@@ -4,7 +4,11 @@ PCVR mod using the native ThunderScript loader, native physical replicas and Har
 
 **Player setup and usage:** [mod/README.md](mod/README.md). The versioned ZIP ships that guide and START-HERE.txt at its top level. This README is for development.
 
-## v0.3.0
+## v0.4.0 compatibility update
+
+Shared mod file/load-order checks now run before admission. Native item custom data, wardrobe custom data and initial/late-join imbues are preserved; owner-driven item adapters provide bounded state and reliable events for scripted mods. Diagnostics includes content status, offline rescan and patch reports. Optional changed AI methods retain the other mod's code with a targeting warning. This is broad integration support, not a claim that arbitrary spells, guns, physics overhauls or custom skeletons work automatically. See [mod/COMPATIBILITY.md](mod/COMPATIBILITY.md) and [docs/MOD-COMPATIBILITY.md](docs/MOD-COMPATIBILITY.md).
+
+## Existing shared-world systems (v0.3)
 
 - Safe arrival placement on playable maps using native anchors, navigation/floor checks, capsule clearance and per-player slots.
 - Shared Home and props. Stable object identities, ownership epochs, native book-spawned items, storage handoffs, late-join catchup and departing-owner loose loot retention.
@@ -25,10 +29,10 @@ References live in local Managed/ and must match the installed game. Never distr
 ```powershell
 ./scripts/Build.ps1
 ./scripts/Install-Mod.ps1
-./scripts/Package-Mod.ps1 -TestsSkippedByUser -RequireSharedWorld
+./scripts/Package-Mod.ps1 -TestsSkippedByUser -RequireSharedWorld -RequireModCompatibility -RequireTeleport
 ```
 
-Installation refuses to replace the mod while the installed game is running or references differ. Packaging uses an allowlist, matching versioned player guides and exact assembly identities. -TestsSkippedByUser records that the broad PvP/sword-cut suites remain stopped at the user's request; it does not bypass the focused shared-world/native-PvE/menu evidence required by -RequireSharedWorld.
+Installation refuses to replace the mod while the installed game is running or references differ. Packaging uses an allowlist, matching versioned player guides and exact assembly identities. -TestsSkippedByUser records that the broad PvP/sword-cut suites remain stopped at the user's request; it does not bypass the focused shared-world/native-PvE/menu evidence required by -RequireSharedWorld or the native compatibility report required by -RequireModCompatibility.
 
 Direct IP uses LiteNetLib UDP, default port 9050. Steam uses the game's initialized Steamworks.NET API and SteamNetworkingSockets, with public/friends/invite-only lobbies. Both share admission, ownership, reliable events, snapshots and 2-8 player capacity. Steam backend/relay and cross-account behavior still need real separate PCs.
 
@@ -45,7 +49,9 @@ The ignored .runtime/game checkout uses MockHmd and separate saves. Start/stop s
 ./scripts/Stop-TestInstances.ps1 -Names host,client,third
 ```
 
-Focused networking checks: tests/SteamSessionChecks (12 cases, including real UDP loopback, password/replay/build/capacity checks and travel agreement races/timeouts). Actual loopback may require execution outside the restricted tool sandbox.
+Focused networking checks: tests/SteamSessionChecks (17 cases, including real UDP loopback, named content rejection, password/replay/build/capacity checks and travel agreement races/timeouts), plus tests/ProtocolTests. Native compatibility and settled-prop checks: `./scripts/Invoke-ModCompatibilityTests.ps1`. Actual loopback may require execution outside the restricted tool sandbox.
+
+Native teleports use a persistent pose revision to discard interpolation history and snap remote bodies and carried items. `./scripts/Invoke-TeleportTests.ps1` checks long, short and rotation-only teleports in both directions; protocol checks cover dropped/reordered snapshots and revision rollover. Ordinary movement still interpolates.
 
 Reports in artifacts/ identify both assembly MVIDs and explicitly separate actual native combat from scripted progression fixtures. BUILD-INFO.txt lists only reports matching the packaged binaries. Historical reports are evidence for their recorded binaries, not newer source builds.
 

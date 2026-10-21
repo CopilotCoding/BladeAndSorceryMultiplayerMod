@@ -15,11 +15,12 @@ Test("snapshot round trip and datagram size", () =>
 {
     var state = new EntitySnapshot { Id = 0x100000001, Epoch = 2, Sequence = uint.MaxValue, Time = 123, Root = new BodyState { Pose = pose }, Head = pose, LeftHand = pose, RightHand = pose, Parts = Enumerable.Range(0, Protocol.MaxParts).Select(i => new BodyState { Part = i, Pose = pose, Velocity = new Vector3(i, 0, 0) }).ToArray() };
     state.LeftGrip = state.RightGrip = new GripState { Active=true, ConnectedAnchor=new Vector3(.1f,.2f,.3f), PositionSpring=2000, PositionDamper=100, PositionMaxForce=5000, RotationSpring=1000, RotationDamper=50, RotationMaxForce=2500, AngularMask=12 };
-    state.Flags = 512 | 256 | 16;
+    state.Flags = 512 | 256 | 16;state.PoseRevision=42;
     var bytes = Protocol.Encode(w => Protocol.Snapshot(w, state)); Check(bytes.Length + Protocol.HeaderBytes <= Protocol.MaxSnapshot, "Snapshot fragments");
     using var r = Protocol.Read(bytes); var decoded = Protocol.Snapshot(r); Protocol.End(r);
     Check(decoded.Parts.Length == Protocol.MaxParts && decoded.Parts[5].Velocity.X == 5 && decoded.Id == state.Id, "Lost state");
     Check(decoded.Flags == state.Flags, "Lost physical ragdoll or native invincibility state");
+    Check(decoded.PoseRevision==42,"Lost teleport revision");
     Check(decoded.LeftGrip.AngularMask == 12 && decoded.RightGrip.PositionSpring == 2000 && decoded.LeftGrip.ConnectedAnchor == state.LeftGrip.ConnectedAnchor, "Lost native grip settings");
     Console.WriteLine("Maximum snapshot bytes including envelope: " + (bytes.Length + Protocol.HeaderBytes));
     state.Flags = 1024;
@@ -53,6 +54,20 @@ Test("interpolation, bounded prediction, stale and reordered snapshots", () =>
     Check(!buffer.Push(State(uint.MaxValue, -1), .11), "Old frame accepted");
     Check(Math.Abs(buffer.Sample(.1)!.Root.Pose.Position.X - .5) < .001, "Interpolation wrong");
     Check(Math.Abs(buffer.Sample(99)!.Root.Pose.Position.X - 1.075) < .001, "Extrapolation is unbounded");
+});
+Test("teleports discard interpolation history, survive dropped packets and reject stale revisions", () =>
+{
+    var buffer=new SnapshotBuffer{Delay=.065};
+    EntitySnapshot State(uint sequence,uint revision,float x)=>new EntitySnapshot{Id=1,Epoch=1,Sequence=sequence,PoseRevision=revision,Root=new BodyState{Pose=new Pose(new Vector3(x,0,0),Quaternion.Identity)},Head=pose,LeftHand=pose,RightHand=pose};
+    Check(buffer.Push(State(1,0,0),1) && buffer.Push(State(2,0,1),1.03),"Ordinary samples rejected");
+    Check(!buffer.Discontinuity && buffer.Count==2,"Normal movement lost interpolation");
+    // The first packets for revision 1 were lost; its later snapshot still marks the teleport.
+    Check(buffer.Push(State(5,1,10),1.12) && buffer.Discontinuity && buffer.Count==1,"Teleport retained old poses");
+    Check(buffer.Sample(1.12)!.Root.Pose.Position.X==10 && buffer.Sample(1.12)!.PoseRevision==1,"Teleport blended through the old location");
+    Check(!buffer.Push(State(4,0,2),1.13) && !buffer.Push(State(6,0,2),1.14),"Stale sequence/revision restored old history");
+    Check(buffer.Push(State(7,1,11),1.15) && !buffer.Discontinuity,"Persistent teleport revision repeatedly snapped ordinary movement");
+    var next=State(1,0,20);next.Epoch=2;Check(buffer.Push(next,1.2),"New owner could not reset its revision");
+    buffer.Clear();Check(buffer.Push(State(1,uint.MaxValue,0),2) && buffer.Push(State(2,0,5),2.03) && buffer.Discontinuity,"Revision rollover failed");
 });
 Test("gameplay events deduplicate independent peers", () =>
 {

@@ -16,6 +16,7 @@ internal sealed class AppearanceData
     public string EthnicGroup = "";
     public float[] Skin = Array.Empty<float>(), Hair = Array.Empty<float>(), HairSecondary = Array.Empty<float>(), HairSpecular = Array.Empty<float>(), Iris = Array.Empty<float>(), Sclera = Array.Empty<float>();
     public string[] Wardrobes = Array.Empty<string>();
+    public NativeWardrobeState[] WardrobeContents = Array.Empty<NativeWardrobeState>();
     internal static float[] Components(Color color) => new[] { color.r, color.g, color.b, color.a };
     internal static Color Color(float[] c) => c.Length == 4 && c.All(Protocol.Finite) ? new Color(c[0], c[1], c[2], c[3]) : UnityEngine.Color.clear;
 }
@@ -90,6 +91,7 @@ internal sealed partial class GameWorld : IDisposable
         {
             nextDiscover = now + .25;
             RecoverMissingRemotePlayers();
+            RecoverMissingRemoteItems();
             RemoveForeignSceneSpawns();
             if (Player.local?.creature != null && Find(Player.local.creature) == null) { PrepareLocalPlayerSpawn(); Register(Player.local.creature, EntityKind.Player); localPlayerRegistered = true; }
             if (spawning.Count == 0)
@@ -113,7 +115,7 @@ internal sealed partial class GameWorld : IDisposable
             nextSnapshot = now + 1.0 / 30;
             foreach (var e in Entities.Values.ToArray())
             {
-                if (!e.Owned || e.Transform == null || IsBrokenRoot(e.Descriptor.Id)) continue;
+                if (!e.Owned || e.Transform == null || !e.TeleportPoseReady || IsBrokenRoot(e.Descriptor.Id)) continue;
                 var snapshot = e.Capture(now);
                 var bytes = Protocol.Encode(w => Protocol.Snapshot(w, snapshot));
                 if (bytes.Length + Protocol.HeaderBytes <= Protocol.MaxSnapshot) { Session.Publish(MessageKind.State, bytes, false); SentSnapshots++; }
@@ -121,6 +123,7 @@ internal sealed partial class GameWorld : IDisposable
         }
         foreach (var descriptor in pendingSceneSpawns.Values.ToArray()) { pendingSceneSpawns.Remove(descriptor.Id); SpawnRemote(descriptor); }
         SpawnPendingBreakFragments();
+        TickCompatibleItems();
         if (now >= nextHeartbeat)
         {
             nextHeartbeat = now + 1;
@@ -166,7 +169,8 @@ internal sealed partial class GameWorld : IDisposable
             HairSpecular = custom != null ? AppearanceData.Components(custom.hairSpecularColor) : Array.Empty<float>(),
             Iris = custom != null ? AppearanceData.Components(custom.eyesIrisColor) : Array.Empty<float>(),
             Sclera = custom != null ? AppearanceData.Components(custom.eyesScleraColor) : Array.Empty<float>(),
-            Wardrobes = creature.equipment.GetWornContents().Select(w => w.referenceID).ToArray()
+            Wardrobes = creature.equipment.GetWornContents().Select(w => w.referenceID).ToArray(),
+            WardrobeContents = CaptureWardrobeContents(creature)
         });
         var entity = new ReplicatedEntity(this, d); Registry.Add(d); Entities.Add(d.Id, entity); creatures.Add(creature, entity);
         entity.Bind(creature, false); PublishSpawn(d);
@@ -196,6 +200,7 @@ internal sealed partial class GameWorld : IDisposable
                 d.Health=entity.Creature.currentHealth; d.MaxHealth=entity.Creature.maxHealth; d.Killed=entity.Creature.isKilled;
                 d.SlicedParts=entity.Creature.ragdoll.parts.Where(p=>p.isSliced).Select(GameMath.PartKey).ToArray();
             }
+            if(entity.Item!=null && entity.Owned)d.ItemState=CaptureItemState(entity);
         }
         Session.Publish(MessageKind.Spawn, Protocol.Encode(w => Protocol.Descriptor(w, d)));
     }
@@ -223,7 +228,7 @@ internal sealed partial class GameWorld : IDisposable
                 case MessageKind.Spawn:
                     var d = Protocol.Descriptor(r); Protocol.End(r);
                     bool known = Registry.TryGet(d.Id, out var previous);
-                    return d.Owner == source && (known ? previous.Owner == source && previous.Epoch == d.Epoch && previous.Kind == d.Kind && previous.CatalogId == d.CatalogId : (ushort)(d.Id >> 32) == source && d.Epoch == 1) &&
+                    return ValidateItemState(d) && d.Owner == source && (known ? previous.Owner == source && previous.Epoch == d.Epoch && previous.Kind == d.Kind && previous.CatalogId == d.CatalogId : (ushort)(d.Id >> 32) == source && d.Epoch == 1) &&
                         (d.Kind != EntityKind.Creature || source == 1) && Registry.Count < Protocol.MaxEntities;
                 case MessageKind.State:
                     var s = Protocol.Snapshot(r); Protocol.End(r); return Registry.Owns(s.Id, source, s.Epoch);
@@ -239,6 +244,7 @@ internal sealed partial class GameWorld : IDisposable
                     return (ushort)(a.EventId >> 32) == source && Registry.Owns(a.Entity, source, a.Epoch) &&
                         (a.Kind != ActionKind.DamageRequest || ValidatePlayerDamageRequest(a)) && (a.Kind != ActionKind.Spell || ValidateNpcEffect(a)) && a.Kind != ActionKind.Telekinesis &&
                         (a.Kind != ActionKind.Break || ValidateBreak(a)) &&
+                        (a.Kind != ActionKind.ModEvent || ValidateModEvent(a)) &&
                         (a.Kind != ActionKind.Grab || ValidateGrip(a)) &&
                         (a.Kind != ActionKind.Penetration || ValidatePenetration(a));
                 case MessageKind.Resync:
@@ -283,6 +289,12 @@ internal sealed partial class GameWorld : IDisposable
                     var d = Protocol.Descriptor(r); Protocol.End(r);
                     if (Registry.TryGet(d.Id, out var existingDescriptor))
                     {
+                        if(existingDescriptor.Owner!=d.Owner || existingDescriptor.Epoch!=d.Epoch)break;
+                        if(existingDescriptor.ItemState!=d.ItemState)
+                        {
+                            existingDescriptor.ItemState=d.ItemState;
+                            if(Entities.TryGetValue(d.Id,out var stateEntity) && !stateEntity.Owned)ApplyItemState(stateEntity);
+                        }
                         if(existingDescriptor.Appearance!=d.Appearance && existingDescriptor.Owner==source)
                         {
                             existingDescriptor.Appearance=d.Appearance;
@@ -347,6 +359,7 @@ internal sealed partial class GameWorld : IDisposable
         int generation = clearGeneration;
         if (descriptor.Kind == EntityKind.Item)
         {
+            string spawnedItemState=descriptor.ItemState;
             if(BindExistingBrokenRoot(descriptor)) {spawning.Remove(descriptor.Id);return;}
             if (!Catalog.TryGetData<ItemData>(descriptor.CatalogId, out var data, false)) { SpawnFailed(descriptor, "Item catalog entry missing"); return; }
             // Spawner identity survives settling physics and avoids duplicate map props
@@ -356,14 +369,14 @@ internal sealed partial class GameWorld : IDisposable
                     i.data.id == descriptor.CatalogId && i.handlers.Count == 0 && i.holder == null && Vector3.Distance(i.transform.position, descriptor.Pose.Position.Game()) < .2f));
             if (match != null && match.data.id != descriptor.CatalogId) { match.Despawn(); match = null; }
             if (match != null) { BindItem(match); return; }
-            data.SpawnAsync(BindItem, descriptor.Pose.Position.Game(), descriptor.Pose.Rotation.Game(), pooled: false);
+            data.SpawnAsync(BindItem, descriptor.Pose.Position.Game(), descriptor.Pose.Rotation.Game(), pooled: false,customDataList:SpawnCustomData(descriptor));
             void BindItem(Item item)
             {
                 spawning.Remove(descriptor.Id);
                 if(item == null) { SpawnFailed(descriptor,"Native item spawn returned no item"); return; }
                 if (disposed || generation != clearGeneration || !Registry.TryGet(descriptor.Id, out _)) { item.Despawn(); return; }
                 var entity = new ReplicatedEntity(this, descriptor); Entities.Add(descriptor.Id, entity); items[item] = entity;
-                entity.Bind(item, match == null); ApplyEarly(entity);
+                entity.Bind(item, match == null);ApplyItemState(entity,match==null && descriptor.ItemState==spawnedItemState); ApplyEarly(entity);
                 if(descriptor.SceneKey.Length>0) GameMath.SetFragmentKey(item,descriptor.SceneKey,false);
             }
         }
@@ -400,7 +413,7 @@ internal sealed partial class GameWorld : IDisposable
                         c.SetFaction(appearance.Faction);
                         c.equipment.UnequipAllWardrobes();
                         foreach (var wardrobe in appearance.Wardrobes.Take(32))
-                            if (Catalog.TryGetData<ItemData>(wardrobe, out _, false)) c.equipment.EquipWardrobe(new ItemContent(wardrobe));
+                            if (Catalog.TryGetData<ItemData>(wardrobe, out _, false)) c.equipment.EquipWardrobe(WardrobeContent(appearance,wardrobe));
                     }
                     c.maxHealth = descriptor.MaxHealth; c.currentHealth = descriptor.Health;
                     applyDepth++;
@@ -502,6 +515,7 @@ internal sealed partial class GameWorld : IDisposable
             var creature = entity.Creature;
             switch (a.Kind)
             {
+                case ActionKind.ModEvent: ApplyModEvent(entity,a);break;
                 case ActionKind.Break: ApplyBreakState(entity,a); break;
                 case ActionKind.Penetration: QueuePenetration(a); break;
                 case ActionKind.Grab:
@@ -711,6 +725,7 @@ internal sealed partial class GameWorld : IDisposable
     {
         foreach (var e in Entities.Values.OrderBy(e=>IsBrokenRoot(e.Descriptor.Id) ? 0 : 1).ToArray())
         {
+            if(e.Owned && e.Item!=null)e.Descriptor.ItemState=CaptureItemState(e);
             if (e.Transform != null) e.Descriptor.Pose = e.Transform.NetPose();
             if (e.Creature)
             {

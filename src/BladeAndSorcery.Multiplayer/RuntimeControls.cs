@@ -62,6 +62,7 @@ public sealed partial class MultiplayerRuntime
             gameObject.AddComponent<AutomatedDriver>().Initialize(this);
         }
         InitializeConnectionFields();
+        BeginCompatibilityScan();
     }
     internal string GameBuildIdentity=>GameSettings.GetVersionString()+"|"+typeof(MultiplayerRuntime).Assembly.ManifestModule.ModuleVersionId.ToString("N")+"|"+typeof(NetworkSession).Assembly.ManifestModule.ModuleVersionId.ToString("N");
     internal void Connect(bool host,ISessionTransport? transport=null,string? steamHost=null)
@@ -70,15 +71,19 @@ public sealed partial class MultiplayerRuntime
         if(transport==null && (steamLobbies?.Busy==true || steamLobbies?.Current.IsValid()==true)){WriteLog("Leave the pending Steam lobby before starting Direct IP.");return;}
         if (Configuration.Port < 1024 || Configuration.Port > 65535) { WriteLog("Port must be 1024-65535"); return; }
         if (Level.current?.data == null || Player.local?.creature == null) { WriteLog("Load a playable level before connecting"); return; }
+        if(!EnsureCompatibilityReady(()=>Connect(host,transport,steamHost)))return;
         CloseConnectionKeyboard();
         try
         {
             Session = new NetworkSession(transport);
+            Session.SetContentManifest(compatibility!.Manifest);
+            if(TestDirectory.Length>0 && TestMismatchContent)Session.SetContentManifest(new ContentManifest(new[]{new ContentEntry{Id="isolated-test-mismatch",Name="Isolated test content mismatch",Hash=new string('A',64)}}));
             Session.Log += WriteLog;
             Session.Closed += reason => { WriteLog(reason);connectionNotice=reason;if(Session?.TransportName=="Steam P2P")steamLobbies?.NoteConnectionClosed(reason); disconnectRequested = true; };
             World = new GameWorld(Session); World.Log += WriteLog;
             World.Match.SurviveLimbLoss=host && Configuration.SurviveLimbLoss;
             harmony = new Harmony("zsoul.bladeandsorcery.multiplayer"); harmony.PatchAll(typeof(MultiplayerRuntime).Assembly);
+            SavePatchCompatibilityReport();
             previousBackground = Application.runInBackground; Application.runInBackground = true;
             string build = GameBuildIdentity;
             if (host) Session.Host(Configuration.PlayerName, build, Configuration.Port, Configuration.Password, Configuration.MaxPlayers);
@@ -93,6 +98,7 @@ public sealed partial class MultiplayerRuntime
     internal void RequestDisconnect(string reason){connectionNotice=reason;WriteLog(reason);disconnectRequested=true;}
     internal void NetworkUpdate()
     {
+        TickCompatibilityScan();
         TickSteamLobbies();
         TickConnectionKeyboard();
         if(Time.realtimeSinceStartup>=nextNativeStatus){nextNativeStatus=Time.realtimeSinceStartup+.5f;RefreshNativeStatus();}
@@ -118,6 +124,7 @@ public sealed partial class MultiplayerRuntime
     private void FixedUpdate() => World?.FixedTick(Time.realtimeSinceStartupAsDouble);
     internal void Disconnect()
     {
+        compatibilityContinuation=null;
         CloseConnectionKeyboard();
         if(World?.CombatCaptureActive==true) SaveCombatCapture();
         var restoreNativeDeath = World?.Match.CaptureNativeDeathRestore();
@@ -209,6 +216,8 @@ public sealed partial class MultiplayerRuntime
             }
             else
             {
+                GUILayout.Label(CompatibilityStatus);
+                if(Session==null && GUILayout.Button("Rescan mods (offline)"))RescanMods();
                 if(GUILayout.Button("Record combat capture"))BeginCombatCapture();
                 if(GUILayout.Button("Save combat capture"))SaveCombatCapture();
                 GUILayout.Label("Experimental legacy wave: prefer the normal wave book for co-op.");
@@ -238,6 +247,7 @@ public sealed partial class MultiplayerRuntime
     public static string ServerAddress = "127.0.0.1:9050";
     private void RefreshNativeStatus()
     {
+        RefreshNativeText("Mod compatibility",CompatibilityStatus);
         string status=Session==null ? "Offline — choose the Steam or Direct IP tab to connect." :
             !Session.Connected ? "Connecting to "+Configuration.Address+"..." :
             (Session.IsHost ? "Hosting" : "Joined")+" | "+Session.Peers.Count+" players | "+(Level.current?.data?.id ?? "loading")+" | "+Session.TransportName+" | "+Session.Ping+" ms";

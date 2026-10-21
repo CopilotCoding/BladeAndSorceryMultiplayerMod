@@ -13,6 +13,8 @@ internal sealed partial class ReplicatedEntity
     {
         if(!Buffer.Push(snapshot,now)) return false;
         LastArrival=now;
+        PoseRevision=snapshot.PoseRevision;
+        if(Buffer.Discontinuity) SnapTeleportPose(snapshot);
         // Late joiners must finish native cuts before detached bones can be
         // placed independently; snapping an intact joint to detached positions
         // would stretch the whole ragdoll while apparel/cuts are still loading.
@@ -29,10 +31,11 @@ internal sealed partial class ReplicatedEntity
         Buffer.Clear();Buffer.Push(snapshot,World.Now);
         SnapCreaturePose(snapshot);
     }
-    private void SnapCreaturePose(EntitySnapshot snapshot)
+    private void SnapCreaturePose(EntitySnapshot snapshot,bool teleported=false)
     {
         var c=Creature!;
-        c.transform.SetPositionAndRotation(snapshot.Root.Pose.Position.Game(),snapshot.Root.Pose.Rotation.Game());
+        if(teleported) c.Teleport(snapshot.Root.Pose.Position.Game(),snapshot.Root.Pose.Rotation.Game());
+        else c.transform.SetPositionAndRotation(snapshot.Root.Pose.Position.Game(),snapshot.Root.Pose.Rotation.Game());
         if(Descriptor.Kind==EntityKind.Player) UpdateTrackedSkeleton(snapshot,(snapshot.Flags&257)!=0);
         foreach(var state in snapshot.Parts)
         {

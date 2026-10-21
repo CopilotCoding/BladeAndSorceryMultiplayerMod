@@ -25,6 +25,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
     internal readonly HashSet<RagdollPart> RemoteSliceTargets = new HashSet<RagdollPart>();
     internal readonly Queue<RagdollPart> PendingRemoteSlices = new Queue<RagdollPart>();
     internal bool AppearanceUpdating;
+    internal string LastCustomData="";
     internal double NextRemoteSliceAt;
     private bool oldAnimatorEnabled, oldLocomotionEnabled, oldRootMotion;
     private Ragdoll.State oldRagdollState;
@@ -56,6 +57,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
         if (remote) NextRemoteSliceAt = World.Now + .1;
         creature.OnKillEvent += OnKilled; creature.OnHealEvent += OnHealed; creature.OnDamageEvent += OnDamaged;
         creature.OnResurrectEvent += OnResurrected; creature.OnDespawnEvent += OnCreatureDespawn;
+        creature.OnTeleportEvent += OnNativeTeleport;
         creature.ragdoll.OnSliceEvent += OnSlice;
         creature.equipment.onCreaturePartChanged += OnAppearanceChanged;
         creature.handLeft.OnGrabEvent += OnHandGrab; creature.handRight.OnGrabEvent += OnHandGrab;
@@ -68,6 +70,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
         oldDisallowDespawn = item.DisallowDespawn; RefreshItemLifetime();
         World.PrepareBreakable(this);
         item.OnDespawnEvent += OnItemDespawn;
+        item.OnTeleportEvent += OnNativeTeleport;
         item.OnSnapEvent += OnSnap; item.OnUnSnapEvent += OnUnsnap;
         foreach (var handler in item.collisionHandlers) handler.OnCollisionStartEvent += OnCollision;
         foreach (var damager in item.collisionHandlers.SelectMany(h => h.damagers).Distinct())
@@ -200,8 +203,8 @@ internal sealed partial class ReplicatedEntity : IDisposable
     internal EntitySnapshot Capture(double now)
     {
         var identity = new Pose(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
-        var s = new EntitySnapshot { Id = Descriptor.Id, Epoch = Descriptor.Epoch, Sequence = ++Sequence, Time = now, Head = identity, LeftHand = identity, RightHand = identity };
-        if (Item) s.Root = GameMath.Capture(Item!.physicBody);
+        var s = new EntitySnapshot { Id = Descriptor.Id, Epoch = Descriptor.Epoch, Sequence = ++Sequence, PoseRevision = PoseRevision, Time = now, Head = identity, LeftHand = identity, RightHand = identity };
+        if (Item) {s.Root = GameMath.Capture(Item!.physicBody);s.Flags=ItemFlags();s.Parts=CaptureAttachedBodies();}
         else if (Creature)
         {
             var c = Creature!;
@@ -257,8 +260,9 @@ internal sealed partial class ReplicatedEntity : IDisposable
         if (rightController != null) SetControllerPose(rightController,s.RightHand);
         if (Item)
         {
+            DriveAttachedBodies(s);
             // Native grip/holster/penetration joints are the controller while constrained.
-            if (Item!.handlers.Count == 0 && Item.holder == null && !Item.isPenetrating) GameMath.Drive(Item.physicBody, s.Root, 45, 120);
+            DriveLooseItem(s,now);
         }
         else if (Creature)
         {
@@ -314,7 +318,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
         controller.transform.SetPositionAndRotation(target.Position.Game(),target.Rotation.Game());
         controller.position=controller.transform.position;controller.rotation=controller.transform.rotation;
     }
-    private void OnCollision(CollisionInstance hit) => World.RecordContact(this, hit);
+    private void OnCollision(CollisionInstance hit) {NoteLocalItemContact(hit);World.RecordContact(this, hit);}
     private void OnPenetrated(Damager damager, CollisionInstance hit, EventTime time) { if (time == EventTime.OnEnd) World.PenetrationChanged(damager,hit,true); }
     private void OnUnpenetrated(Damager damager, CollisionInstance hit, bool wentThrough, EventTime time) { if (time == EventTime.OnStart) World.PenetrationChanged(damager,hit,false,wentThrough); }
     private void OnKilled(CollisionInstance hit, EventTime time)
@@ -408,6 +412,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
             var c = Creature!;
             c.OnKillEvent -= OnKilled; c.OnHealEvent -= OnHealed; c.OnDamageEvent -= OnDamaged; c.OnResurrectEvent -= OnResurrected;
             c.OnDespawnEvent -= OnCreatureDespawn; c.ragdoll.OnSliceEvent -= OnSlice;
+            c.OnTeleportEvent -= OnNativeTeleport;
             c.equipment.onCreaturePartChanged -= OnAppearanceChanged;
             c.handLeft.OnGrabEvent -= OnHandGrab; c.handRight.OnGrabEvent -= OnHandGrab;
             c.handLeft.OnUnGrabEvent -= OnHandRelease; c.handRight.OnUnGrabEvent -= OnHandRelease;
@@ -425,6 +430,7 @@ internal sealed partial class ReplicatedEntity : IDisposable
             if(!Owned && Item!.GetComponent<ItemMagicProjectile>() is { } projectile)projectile.effectInstance?.End();
             if(itemLifetimeProtected)Item!.DisallowDespawn = oldDisallowDespawn;
             Item.OnDespawnEvent -= OnItemDespawn; Item.OnSnapEvent -= OnSnap; Item.OnUnSnapEvent -= OnUnsnap;
+            Item.OnTeleportEvent -= OnNativeTeleport;
             foreach (var handler in Item.collisionHandlers) handler.OnCollisionStartEvent -= OnCollision;
         }
     }

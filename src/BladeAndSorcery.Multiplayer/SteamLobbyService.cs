@@ -87,6 +87,7 @@ internal sealed class SteamLobbyService : IDisposable
     internal void Host()
     {
         if(!CanStart())return;
+        if(!runtime.EnsureCompatibilityReady(Host))return;
         closedReason="";connectionAnnounced=false;Hosting=true;phase="Creating";createPending=true;deadline=Now+30;hostedVisibility=runtime.Configuration.SteamLobbyVisibility;
         var type=hostedVisibility==0 ? ELobbyType.k_ELobbyTypePublic :
             hostedVisibility==2 ? ELobbyType.k_ELobbyTypePrivate : ELobbyType.k_ELobbyTypeFriendsOnly;
@@ -109,6 +110,7 @@ internal sealed class SteamLobbyService : IDisposable
     internal void Join(CSteamID id)
     {
         if(!CanStart())return;
+        if(!runtime.EnsureCompatibilityReady(()=>Join(id)))return;
         if(!id.IsValid()){Notice("Select a Steam lobby first.");return;}
         closedReason="";connectionAnnounced=false;phase="Joining";Hosting=false;joining=id;joinPending=true;deadline=Now+30;
         var call=SteamMatchmaking.JoinLobby(id);

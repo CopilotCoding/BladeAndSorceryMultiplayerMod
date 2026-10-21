@@ -18,6 +18,11 @@ internal static class NetworkPlayerDefensePatch
         var code = instructions.ToList();
         var state = AccessTools.PropertyGetter(typeof(Creature),nameof(Creature.state));
         var player = AccessTools.Field(typeof(Player),nameof(Player.currentCreature));
+        if(code.Count(i=>i.Calls(state))!=1 || code.Count(i=>i.LoadsField(player))!=1)
+        {
+            MultiplayerRuntime.ReportOptionalPatch("AI defense was changed by another patch; keeping that method. Client targeting needs verification.");
+            foreach(var instruction in code)yield return instruction;yield break;
+        }
         int states=0, players=0;
         foreach(var instruction in code)
         {
@@ -34,7 +39,6 @@ internal static class NetworkPlayerDefensePatch
             }
             else yield return instruction;
         }
-        if(states!=1 || players!=1) throw new InvalidOperationException("Native AI defense predicates changed; refusing an incompatible patch");
     }
     private static Creature.State CombatState(Creature creature)
     {
@@ -52,15 +56,20 @@ internal static class NetworkPlayerMeleePhysicsPatch
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
         var player=AccessTools.Field(typeof(Player),nameof(Player.currentCreature));
+        var code=instructions.ToList();
+        if(code.Count(i=>i.LoadsField(player))!=1)
+        {
+            MultiplayerRuntime.ReportOptionalPatch("AI attack was changed by another patch; keeping that method. Client targeting needs verification.");
+            foreach(var instruction in code)yield return instruction;yield break;
+        }
         int count=0;
-        foreach(var instruction in instructions)
+        foreach(var instruction in code)
         {
             if(!instruction.LoadsField(player)) {yield return instruction;continue;}
             count++; instruction.opcode=OpCodes.Ldarg_0; instruction.operand=null;
             yield return instruction;
             yield return new CodeInstruction(OpCodes.Call,AccessTools.Method(typeof(NetworkPlayerMeleePhysicsPatch),nameof(PlayerTarget)));
         }
-        if(count!=1) throw new InvalidOperationException("Native AI attack physics predicate changed; refusing an incompatible patch");
     }
     private static Creature PlayerTarget(BrainModuleMelee melee)
     {

@@ -52,17 +52,20 @@ public sealed class OwnershipTable
 public sealed class SnapshotBuffer
 {
     private readonly List<(double Arrival, EntitySnapshot State)> frames = new List<(double, EntitySnapshot)>();
-    private uint epoch, sequence;
+    private uint epoch, sequence, poseRevision;
     private bool initialized;
     public double Delay = .065;
     public double MaxExtrapolation = .075;
     public int Count => frames.Count;
+    public bool Discontinuity { get; private set; }
     public bool Push(EntitySnapshot state, double arrival)
     {
         if (initialized && state.Epoch == epoch && !Protocol.Newer(state.Sequence, sequence)) return false;
         if (initialized && state.Epoch != epoch && !Protocol.Newer(state.Epoch, epoch)) return false;
-        if (!initialized || state.Epoch != epoch) frames.Clear();
-        initialized = true; epoch = state.Epoch; sequence = state.Sequence;
+        if (initialized && state.Epoch == epoch && state.PoseRevision != poseRevision && !Protocol.Newer(state.PoseRevision, poseRevision)) return false;
+        Discontinuity = initialized && state.Epoch == epoch && state.PoseRevision != poseRevision;
+        if (!initialized || state.Epoch != epoch || Discontinuity) frames.Clear();
+        initialized = true; epoch = state.Epoch; sequence = state.Sequence; poseRevision = state.PoseRevision;
         // Arrival time is in the local clock domain. Sender clocks need not match.
         frames.Add((arrival, state)); if (frames.Count > 32) frames.RemoveAt(0);
         return true;
@@ -101,7 +104,7 @@ public sealed class SnapshotBuffer
     private static BodyState Blend(BodyState a, BodyState b, float t) => new BodyState { Part = b.Part, Pose = Blend(a.Pose, b.Pose, t), Velocity = Vector3.Lerp(a.Velocity, b.Velocity, t), AngularVelocity = Vector3.Lerp(a.AngularVelocity, b.AngularVelocity, t) };
     private static EntitySnapshot Blend(EntitySnapshot a, EntitySnapshot b, float t)
     {
-        var result = new EntitySnapshot { Id = b.Id, Epoch = b.Epoch, Sequence = b.Sequence, Time = b.Time, Flags = b.Flags, LeftGrip = b.LeftGrip, RightGrip = b.RightGrip, Root = Blend(a.Root, b.Root, t), Head = Blend(a.Head, b.Head, t), LeftHand = Blend(a.LeftHand, b.LeftHand, t), RightHand = Blend(a.RightHand, b.RightHand, t), Parts = new BodyState[b.Parts.Length] };
+        var result = new EntitySnapshot { Id = b.Id, Epoch = b.Epoch, Sequence = b.Sequence, PoseRevision = b.PoseRevision, Time = b.Time, Flags = b.Flags, LeftGrip = b.LeftGrip, RightGrip = b.RightGrip, Root = Blend(a.Root, b.Root, t), Head = Blend(a.Head, b.Head, t), LeftHand = Blend(a.LeftHand, b.LeftHand, t), RightHand = Blend(a.RightHand, b.RightHand, t), Parts = new BodyState[b.Parts.Length] };
         for (int i = 0; i < b.Parts.Length; i++)
         {
             var source = b.Parts[i];
@@ -110,5 +113,5 @@ public sealed class SnapshotBuffer
         }
         return result;
     }
-    public void Clear() { frames.Clear(); initialized = false; }
+    public void Clear() { frames.Clear(); initialized = false; Discontinuity = false; }
 }

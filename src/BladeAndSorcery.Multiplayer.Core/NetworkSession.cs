@@ -18,6 +18,7 @@ public sealed class NetworkSession : IDisposable
     private readonly Dictionary<ISessionPeer, ushort> authenticated = new Dictionary<ISessionPeer, ushort>();
     private readonly Dictionary<ushort, PeerInfo> participants = new Dictionary<ushort, PeerInfo>();
     private readonly Dictionary<ISessionPeer, double> pending = new Dictionary<ISessionPeer, double>();
+    private readonly Dictionary<ISessionPeer,double> rejecting = new Dictionary<ISessionPeer,double>();
 
     private ISessionPeer? server;
     private ushort nextPeer = 2;
@@ -45,17 +46,20 @@ public sealed class NetworkSession : IDisposable
     public event Action<string>? Closed;
     // The game adapter validates entity authority and payload semantics before a host relays anything.
     public Func<ushort, MessageKind, byte[], bool>? Validate;
+    private ContentManifest content = new ContentManifest();
+    public void SetContentManifest(ContentManifest manifest)
+    { if(Active)throw new InvalidOperationException("Content cannot change during a session");content=manifest ?? throw new ArgumentNullException(nameof(manifest)); }
 
     public NetworkSession(ISessionTransport? transport=null)
     {
         this.transport=transport ?? new UdpSessionTransport();
-        this.transport.CanAccept=()=>IsHost && participants.Count+pending.Count<MaxPlayers;
+        this.transport.CanAccept=()=>IsHost && participants.Count+pending.Count+rejecting.Count<MaxPlayers;
         this.transport.Connected+=peer=>
         {
             Log?.Invoke(this.transport.Name+" transport connected; negotiating session");
             if(IsHost)
             {
-                if(participants.Count+pending.Count>=MaxPlayers){peer.Disconnect();return;}
+                if(participants.Count+pending.Count+rejecting.Count>=MaxPlayers){peer.Disconnect();return;}
                 pending[peer]=hasPolled ? now : double.NaN;
                 if(this.transport.PasswordChallenge)
                 {
@@ -67,14 +71,15 @@ public sealed class NetworkSession : IDisposable
         };
         this.transport.Disconnected+=(peer,reason)=>
         {
-            pending.Remove(peer);challenges.Remove(peer);
+            if(!active)return;
+            pending.Remove(peer);challenges.Remove(peer);rejecting.Remove(peer);
             if(IsHost)
             {
                 if(!authenticated.TryGetValue(peer,out var id))return;
                 authenticated.Remove(peer);participants.Remove(id);
                 Broadcast(MessageKind.Left,1,Protocol.Encode(w=>w.Write(id)),true);PeerLeft?.Invoke(id);
             }
-            else if(peer==server){LocalId=0;participants.Clear();server=null;Closed?.Invoke("Disconnected: "+reason);}
+            else if(peer==server || server==null && active && LocalId==0){LocalId=0;participants.Clear();server=null;Closed?.Invoke("Disconnected: "+reason);}
         };
         this.transport.Error+=error=>Log?.Invoke(error);
         this.transport.Received+=(peer,bytes)=>
@@ -110,6 +115,7 @@ public sealed class NetworkSession : IDisposable
     public void Poll(double time)
     {
         now=time;hasPolled=true;transport.Poll();
+        foreach(var peer in rejecting.Where(p=>now>=p.Value).Select(p=>p.Key).ToArray()){rejecting.Remove(peer);peer.Disconnect();}
         foreach(var peer in pending.Where(p=>double.IsNaN(p.Value)).Select(p=>p.Key).ToArray())pending[peer]=now;
         foreach(var item in pending.Where(p=>now-p.Value>10).ToArray()){pending.Remove(item.Key);challenges.Remove(item.Key);item.Key.Disconnect();}
     }
@@ -119,7 +125,7 @@ public sealed class NetworkSession : IDisposable
         return hmac.ComputeHash(nonce.Concat(Encoding.UTF8.GetBytes(build)).ToArray());
     }
     private void SendHello(ISessionPeer peer,byte[]? nonce)
-        =>SendRaw(peer,MessageKind.Hello,0,Protocol.Encode(w=>{w.Write(Protocol.Version);Protocol.String(w,build);Protocol.String(w,name,64);if(nonce!=null)w.Write(Proof(nonce));}),true);
+        =>SendRaw(peer,MessageKind.Hello,0,Protocol.Encode(w=>{w.Write(Protocol.Version);Protocol.String(w,build);Protocol.String(w,name,64);content.Write(w);if(nonce!=null)w.Write(Proof(nonce));}),true);
     private bool AcceptProof(ISessionPeer peer,BinaryReader hello)
     {
         if(!transport.PasswordChallenge)return true;
@@ -127,6 +133,12 @@ public sealed class NetworkSession : IDisposable
         if(!challenges.TryGetValue(peer,out var nonce) || supplied.Length!=32)return false;
         var expected=Proof(nonce);int difference=0;for(int i=0;i<expected.Length;i++)difference|=expected[i]^supplied[i];
         return difference==0;
+    }
+    private void Reject(ISessionPeer peer,string reason)
+    {
+        // Allow the reliable rejection to reach UDP clients before closing the peer.
+        SendRaw(peer,MessageKind.Rejected,1,Protocol.Encode(w=>Protocol.String(w,reason,1024)),true);
+        pending.Remove(peer);challenges.Remove(peer);rejecting[peer]=now+2;
     }
     public void Publish(MessageKind kind, byte[] payload, bool reliable = true)
     {
@@ -150,13 +162,16 @@ public sealed class NetworkSession : IDisposable
         var payload = r.ReadBytes((int)(r.BaseStream.Length - r.BaseStream.Position));
         if (IsHost)
         {
+            if(rejecting.ContainsKey(peer))return;
             if (!authenticated.TryGetValue(peer, out source))
             {
                 if (kind != MessageKind.Hello || !pending.ContainsKey(peer)) throw new InvalidDataException("Unauthenticated packet");
                 using var hello = Protocol.Read(payload);
-                ushort version = hello.ReadUInt16(); string remoteBuild = Protocol.String(hello); string remoteName = Protocol.String(hello, 64); bool passwordAccepted=AcceptProof(peer,hello); Protocol.End(hello);
-                if (version != Protocol.Version || remoteBuild != build || nextPeer == ushort.MaxValue) { peer.Disconnect(); pending.Remove(peer); Log?.Invoke("Rejected incompatible game/mod build or exhausted session identities"); return; }
-                if(!passwordAccepted){SendRaw(peer,MessageKind.Rejected,1,Protocol.Encode(w=>Protocol.String(w,"Incorrect server password",128)),true);peer.Disconnect();pending.Remove(peer);challenges.Remove(peer);return;}
+                ushort version = hello.ReadUInt16(); string remoteBuild = Protocol.String(hello); string remoteName = Protocol.String(hello, 64); var remoteContent=ContentManifest.Read(hello); bool passwordAccepted=AcceptProof(peer,hello); Protocol.End(hello);
+                if (version != Protocol.Version || remoteBuild != build || nextPeer == ushort.MaxValue) { Reject(peer,"Incompatible game/multiplayer build. Install the same release on every PC.");return; }
+                if(!passwordAccepted){Reject(peer,"Incorrect server password");return;}
+                string mismatch=content.Difference(remoteContent);
+                if(mismatch.Length>0){Reject(peer,mismatch);Log?.Invoke(mismatch);return;}
                 source = nextPeer++; pending.Remove(peer);challenges.Remove(peer); authenticated.Add(peer, source);
                 var info = new PeerInfo { Id = source, Name = remoteName };
                 participants.Add(source, info);
@@ -182,7 +197,7 @@ public sealed class NetworkSession : IDisposable
                     if(LocalId!=0 || !transport.PasswordChallenge || payload.Length!=32)throw new InvalidDataException("Unexpected authentication challenge");
                     SendHello(peer,payload);break;
                 case MessageKind.Rejected:
-                    var rejection=Protocol.String(body,128);Protocol.End(body);Closed?.Invoke(rejection);break;
+                    var rejection=Protocol.String(body,1024);Protocol.End(body);Closed?.Invoke(rejection);break;
                 case MessageKind.Welcome:
                     if (LocalId != 0) throw new InvalidDataException("Repeated welcome");
                     LocalId = body.ReadUInt16(); var guid = body.ReadBytes(16);
@@ -228,6 +243,6 @@ public sealed class NetworkSession : IDisposable
     public void Dispose()
     {
         active=false;transport.Dispose();server=null;LocalId=0;IsHost=false;password="";key="";challenges.Clear();
-        authenticated.Clear(); pending.Clear(); participants.Clear();
+        authenticated.Clear(); pending.Clear(); participants.Clear();rejecting.Clear();
     }
 }

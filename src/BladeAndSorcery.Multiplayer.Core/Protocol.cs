@@ -8,7 +8,7 @@ namespace BladeAndSorcery.Multiplayer.Core;
 
 public enum EntityKind : byte { Player, Item, Creature }
 public enum MessageKind : byte { Hello = 1, Welcome, Joined, Left, Spawn, Despawn, State, OwnershipRequest, OwnershipGrant, Gameplay, Resync, Match, Ping, Scene, SceneRequest, SceneReady, ArenaSpawn, AuthChallenge, Rejected, ScenePrepare, ScenePrepared, SceneNotice, NativeWaveRequest, NativeWaveState }
-public enum ActionKind : byte { Grab, Release, DamageRequest, Health, Slice, Death, Respawn, Imbue, Spell, Break, Snap, Unsnap, Telekinesis, Penetration }
+public enum ActionKind : byte { Grab, Release, DamageRequest, Health, Slice, Death, Respawn, Imbue, Spell, Break, Snap, Unsnap, Telekinesis, Penetration, ModEvent }
 
 public sealed class EntityDescriptor
 {
@@ -20,6 +20,7 @@ public sealed class EntityDescriptor
     public string SceneKey = "";
     public float Height = 1.75f;
     public string Appearance = "";
+    public string ItemState = "";
     public Pose Pose;
     public float Health = 100, MaxHealth = 100;
     public bool Killed;
@@ -43,7 +44,7 @@ public struct BodyState
 public sealed class EntitySnapshot
 {
     public ulong Id;
-    public uint Epoch, Sequence;
+    public uint Epoch, Sequence, PoseRevision;
     public double Time;
     public BodyState Root;
     public Pose Head, LeftHand, RightHand;
@@ -80,7 +81,7 @@ public sealed class PeerInfo
 
 public static class Protocol
 {
-    public const ushort Version = 5;
+    public const ushort Version = 6;
     public static bool ApplicationMessage(MessageKind kind) => kind >= MessageKind.Spawn && kind <= MessageKind.ArenaSpawn || kind >= MessageKind.ScenePrepare && kind <= MessageKind.NativeWaveState;
     public const uint Magic = 0x504D5342;
     public const int MaxPeers = 8, MaxParts = 20, MaxEntities = 512;
@@ -149,6 +150,7 @@ public static class Protocol
         w.Write(e.Id); w.Write(e.Owner); w.Write(e.Epoch); w.Write((byte)e.Kind);
         String(w, e.CatalogId); String(w, e.SceneKey, 2048); w.Write(e.Height); String(w, e.Appearance, 60000); Pose(w, e.Pose);
         w.Write(e.Health); w.Write(e.MaxHealth); w.Write(e.Killed); w.Write((byte)e.SlicedParts.Length); foreach (int part in e.SlicedParts) w.Write(part);
+        String(w,e.ItemState,24000);
     }
     public static EntityDescriptor Descriptor(BinaryReader r)
     {
@@ -156,20 +158,21 @@ public static class Protocol
         e.Health = r.ReadSingle(); e.MaxHealth = r.ReadSingle(); e.Killed = r.ReadBoolean(); int count = r.ReadByte();
         if (count > MaxParts || !Finite(e.Health) || !Finite(e.MaxHealth) || e.MaxHealth <= 0 || e.MaxHealth > 1000000 || e.Health < 0 || e.Health > e.MaxHealth) throw new InvalidDataException("Invalid initial combat state");
         e.SlicedParts = new int[count]; for (int i = 0; i < count; i++) e.SlicedParts[i] = r.ReadInt32();
+        e.ItemState=String(r,24000);
         if (e.Id == 0 || e.Owner == 0 || e.Epoch == 0 || e.Kind > EntityKind.Creature || !Finite(e.Height) || e.Height < .3f || e.Height > 4) throw new InvalidDataException("Invalid entity descriptor");
         return e;
     }
     public static void Snapshot(BinaryWriter w, EntitySnapshot s)
     {
         if (s.Parts.Length > MaxParts) throw new InvalidDataException("Too many ragdoll parts");
-        w.Write(s.Id); w.Write(s.Epoch); w.Write(s.Sequence); w.Write(s.Time); w.Write(s.Flags);
+        w.Write(s.Id); w.Write(s.Epoch); w.Write(s.Sequence); w.Write(s.PoseRevision); w.Write(s.Time); w.Write(s.Flags);
         Body(w, s.Root); Pose(w, s.Head); Pose(w, s.LeftHand); Pose(w, s.RightHand);
         Grip(w, s.LeftGrip); Grip(w, s.RightGrip);
         w.Write((byte)s.Parts.Length); foreach (var part in s.Parts) Body(w, part);
     }
     public static EntitySnapshot Snapshot(BinaryReader r)
     {
-        var s = new EntitySnapshot { Id = r.ReadUInt64(), Epoch = r.ReadUInt32(), Sequence = r.ReadUInt32(), Time = r.ReadDouble(), Flags = r.ReadUInt16(), Root = Body(r), Head = Pose(r), LeftHand = Pose(r), RightHand = Pose(r) };
+        var s = new EntitySnapshot { Id = r.ReadUInt64(), Epoch = r.ReadUInt32(), Sequence = r.ReadUInt32(), PoseRevision = r.ReadUInt32(), Time = r.ReadDouble(), Flags = r.ReadUInt16(), Root = Body(r), Head = Pose(r), LeftHand = Pose(r), RightHand = Pose(r) };
         if (s.Flags > 1023) throw new InvalidDataException("Unknown snapshot flags");
         s.LeftGrip = Grip(r); s.RightGrip = Grip(r);
         if (double.IsNaN(s.Time) || double.IsInfinity(s.Time)) throw new InvalidDataException("Invalid timestamp");
@@ -204,7 +207,7 @@ public static class Protocol
     public static GameplayAction Action(BinaryReader r)
     {
         var a = new GameplayAction { EventId = r.ReadUInt64(), Entity = r.ReadUInt64(), Other = r.ReadUInt64(), Epoch = r.ReadUInt32(), Kind = (ActionKind)r.ReadByte(), Part = r.ReadInt32(), Handle = r.ReadInt32(), Side = r.ReadInt32(), Value = r.ReadSingle(), Position = Vector(r), Direction = Vector(r), Text = String(r, 4096) };
-        if (a.EventId == 0 || a.Kind > ActionKind.Penetration || !Finite(a.Value) || Math.Abs(a.Value) > 1e7f) throw new InvalidDataException("Invalid gameplay action");
+        if (a.EventId == 0 || a.Kind > ActionKind.ModEvent || !Finite(a.Value) || Math.Abs(a.Value) > 1e7f) throw new InvalidDataException("Invalid gameplay action");
         return a;
     }
 }

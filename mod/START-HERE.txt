@@ -1,6 +1,11 @@
-BLADE & SORCERY MULTIPLAYER - v0.3.0
+BLADE & SORCERY MULTIPLAYER - v0.4.0
 
 EVERYONE: INSTALL FIRST
+Use the same gameplay mods, versions, files and load order on every PC.
+This release checks content before joining. Special scripted abilities may still
+need an adapter; read COMPATIBILITY.md inside the mod folder. Older multiplayer
+versions cannot join this build.
+
 1. Close the game and extract this ZIP.
 2. Steam -> Blade & Sorcery -> Manage -> Browse local files.
 3. Open BladeAndSorcery_Data\StreamingAssets\Mods.
@@ -55,8 +60,9 @@ PVE: Use the map's NORMAL WAVE BOOK. Either player selects a wave and presses
 
 PLAY TAB: World/wave status, PvP mode, friendly fire, survive limb loss, respawn.
 SESSION TAB: Player list and Leave session. Host leaving ends the session.
-DIAGNOSTICS TAB: Combat captures. Experimental sword wave is a legacy test;
-                use the normal wave book for ordinary co-op.
+DIAGNOSTICS TAB: Mod compatibility status, offline rescan and combat captures.
+                Experimental sword wave is a legacy test; use the normal wave
+                book for ordinary co-op.
 F8: Optional desktop panel with the same pages.
 
 LOADING PROBLEM? Read Play -> World status. Missing map assets cancel travel;

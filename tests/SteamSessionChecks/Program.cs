@@ -62,12 +62,12 @@ Run("challenge replay on another connection is rejected",()=>
     var replay=new MemoryTransport(wire){ReplaceHello=proof};using var b=new NetworkSession(replay);b.Join("","B","build",password:"secret");Pump(host,a,b);
     Check(a.Connected && !b.Connected && host.Peers.Count==2,"Old challenge response replayed");
 });
-Run("Direct IP transport contract keeps its original Hello format",()=>
+Run("Direct IP protocol 6 Hello carries content manifest without challenge proof",()=>
 {
     var wire=new MemoryTransport{PasswordChallenge=false};using var host=new NetworkSession(wire);host.Host("H","build");
     var clientWire=new MemoryTransport(wire){PasswordChallenge=false};using var client=new NetworkSession(clientWire);client.Join("","C","build");Pump(host,client);
     var bytes=clientWire.Sent.First();using var reader=Protocol.Read(bytes);reader.BaseStream.Position=Protocol.HeaderBytes;
-    Check((MessageKind)bytes[6]==MessageKind.Hello && reader.ReadUInt16()==Protocol.Version && Protocol.String(reader)=="build" && Protocol.String(reader,64)=="C","UDP Hello changed");Protocol.End(reader);
+    Check((MessageKind)bytes[6]==MessageKind.Hello && reader.ReadUInt16()==Protocol.Version && Protocol.String(reader)=="build" && Protocol.String(reader,64)=="C","UDP Hello changed");Check(ContentManifest.Read(reader).Count==0,"Unexpected content manifest");Protocol.End(reader);
     Check(client.Connected,"UDP contract admission failed");
 });
 Run("stale world revisions are rejected after travel",()=>
@@ -117,6 +117,55 @@ Run("new world control messages route while stale Scene cannot roll back revisio
     Check(received.Contains(MessageKind.ScenePrepare),"Map preflight not routed");
     host.SetWorldRevision(3);host.Publish(MessageKind.Scene,new byte[]{2});Pump(host,client);Check(client.WorldRevision==3,"World commit not applied");
     host.SetWorldRevision(2);host.Publish(MessageKind.Scene,new byte[]{3});Pump(host,client);Check(client.WorldRevision==3,"Stale Scene rolled revision backwards");
+});
+Run("matching mod manifests admit over both transport contracts",()=>
+{
+    foreach(bool challenge in new[]{false,true})
+    {
+        var wire=new MemoryTransport{PasswordChallenge=challenge};using var host=new NetworkSession(wire);
+        var manifest=new ContentManifest(new[]{new ContentEntry{Id="weapon",Name="Weapon pack",Hash=new string('A',64)}});
+        host.SetContentManifest(manifest);host.Host("H","build");
+        using var client=new NetworkSession(new MemoryTransport(wire){PasswordChallenge=challenge});client.SetContentManifest(manifest);client.Join("","C","build");Pump(host,client);
+        Check(client.Connected && host.Peers.Count==2,"Matching content rejected");
+    }
+});
+Run("missing extra and changed mods reject before world membership with useful notices",()=>
+{
+    foreach(bool challenge in new[]{false,true})foreach(string mode in new[]{"missing","changed","extra"})
+    {
+        var wire=new MemoryTransport{PasswordChallenge=challenge};using var host=new NetworkSession(wire);
+        host.SetContentManifest(new ContentManifest(new[]{new ContentEntry{Id="pack",Name="Example pack",Hash=new string('A',64)}}));host.Host("H","build");
+        using var client=new NetworkSession(new MemoryTransport(wire){PasswordChallenge=challenge});
+        var records=new List<ContentEntry>();if(mode!="missing")records.Add(new ContentEntry{Id="pack",Name="Example pack",Hash=new string(mode=="changed" ? 'B' : 'A',64)});
+        if(mode=="extra")records.Add(new ContentEntry{Id="extra",Name="Extra pack",Hash=new string('C',64)});
+        client.SetContentManifest(new ContentManifest(records));int joined=0,messages=0;string notice="";
+        host.PeerJoined+=_=>joined++;client.Message+=(_,_,_)=>messages++;client.Closed+=reason=>notice+=reason;
+        client.Join("","C","build");Pump(host,client);
+        Check(!client.Connected && joined==0 && messages==0 && host.Peers.Count==1 && notice.Contains("Mod mismatch") && notice.Contains("pack"),"Mismatch did not fail cleanly: "+mode);
+    }
+});
+Run("manifest canonical ordering defensive copy and bounded validation",()=>
+{
+    var a=new ContentEntry{Id="a",Name="A",Hash=new string('A',64)};var b=new ContentEntry{Id="b",Name="B",Hash=new string('B',64)};
+    var manifest=new ContentManifest(new[]{a,b});var reversed=new ContentManifest(new[]{b,a});a.Hash=new string('C',64);
+    Check(manifest.Difference(reversed)=="","Manifest changed after construction or depends on enumeration order");
+    foreach(var records in new[]{new[]{b,b},new[]{new ContentEntry{Id="bad",Hash="bad"}},Enumerable.Range(0,129).Select(i=>new ContentEntry{Id=i.ToString(),Name="x",Hash=new string('A',64)}).ToArray()})
+    {bool rejected=false;try{_ = new ContentManifest(records);}catch(InvalidDataException){rejected=true;}Check(rejected,"Malformed manifest accepted");}
+    bool activeRejected=false;using var host=new NetworkSession(new MemoryTransport());host.Host("H","build");try{host.SetContentManifest(manifest);}catch(InvalidOperationException){activeRejected=true;}Check(activeRejected,"Live manifest replaced");
+});
+Run("custom item state survives descriptor serialization and enforces wire size",()=>
+{
+    var descriptor=new EntityDescriptor{Id=1,Owner=1,Epoch=1,Kind=EntityKind.Item,CatalogId="ModWeapon",Pose=new Pose(System.Numerics.Vector3.Zero,System.Numerics.Quaternion.Identity),ItemState="{\"Custom\":[{\"Type\":\"Example:Ammo\",\"Json\":\"{\\\"count\\\":7}\"}]}"};
+    var bytes=Protocol.Encode(w=>Protocol.Descriptor(w,descriptor));using var reader=Protocol.Read(bytes);var copy=Protocol.Descriptor(reader);Protocol.End(reader);
+    Check(copy.ItemState==descriptor.ItemState,"Custom item state was dropped");descriptor.ItemState=new string('x',24001);
+    bool rejected=false;try{Protocol.Encode(w=>Protocol.Descriptor(w,descriptor));}catch(InvalidDataException){rejected=true;}Check(rejected,"Oversized custom state accepted");
+});
+Run("real UDP content rejection delivers its named reason before closing",()=>
+{
+    using var host=new NetworkSession();host.SetContentManifest(new ContentManifest(new[]{new ContentEntry{Id="pack",Name="Real UDP fixture pack",Hash=new string('A',64)}}));host.Host("H","build",0);
+    using var client=new NetworkSession();string first="";client.Closed+=reason=>{if(first.Length==0)first=reason;};client.Join("127.0.0.1","C","build",host.LocalPort);
+    var timer=Stopwatch.StartNew();while(timer.ElapsedMilliseconds<5000 && first.Length==0){host.Poll(timer.Elapsed.TotalSeconds);client.Poll(timer.Elapsed.TotalSeconds);Thread.Sleep(2);}
+    Check(first.StartsWith("Mod mismatch",StringComparison.Ordinal) && first.Contains("Real UDP fixture pack") && !client.Connected && host.Peers.Count==1,"Named UDP rejection was lost: "+first);
 });
 Console.WriteLine(passed+" shared-session checks passed. Real Steam accounts/relay remain unverified.");
 if(args.Length==1)File.WriteAllText(args[0],JsonSerializer.Serialize(new{time=DateTime.UtcNow,passed=true,count=passed,checks,coreMvid=typeof(NetworkSession).Assembly.ManifestModule.ModuleVersionId.ToString("N"),steamBackendVerified=false,combatTestsRun=false}));

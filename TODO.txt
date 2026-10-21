@@ -1,6 +1,25 @@
-BLADE & SORCERY MULTIPLAYER - REMAINING WORK (v0.3.0)
+BLADE & SORCERY MULTIPLAYER - REMAINING WORK (v0.4.0)
 
-IMPLEMENTED IN THIS UPDATE
+MOD COMPATIBILITY UPDATE
+[x] Background shared-mod fingerprints and load-order checks before admission,
+    explicit pure local-only declarations, named mismatches on Steam/Direct IP.
+[x] Shared settings declarations; public mod names/digests only on the wire.
+[x] Bounded native item custom-data spawn/update and wardrobe custom data.
+[x] Initial/late-join imbue state; versioned item-adapter state and reliable events.
+[x] Ownership/epoch checks, event deduplication and remote-application suppression.
+[x] Optional changed AI patch fallback and patch-owner diagnostics.
+[x] Resting loose-prop reconciliation with constraint/contact safety guards;
+    per-item pose/identity audits and deliberate replica drift fixtures.
+[x] Native player/creature/item teleports use persistent pose revisions and
+    immediate replica snaps; old positions cannot interpolate across teleports.
+[ ] Verify named community mod versions/packs on real PCs. No third-party mod
+    pack is certified by representative synthetic integration tests.
+[ ] Add adapters for specific complex guns, spells, scripted maps and overhauls.
+[ ] Synchronize arbitrary ModOption/runtime gameplay settings through explicit
+    declarations/adapters; matching files do not imply matching unknown state.
+[ ] Extend arbitrary creature skeleton/extra-body-part replication.
+
+EXISTING SHARED-WORLD SYSTEMS (v0.3)
 [x] General safe arrival placement beyond Arena: native anchors, floor/NavMesh,
     standing clearance, occupied slots and non-overlapping late joins.
 [x] Shared Home/props, stable scene identities, ownership epochs, positions and
@@ -26,17 +45,21 @@ IMPLEMENTED IN THIS UPDATE
     and native wave/travel guidance. Legacy sword wave is diagnostic-only.
 
 VERIFICATION / LIMITS
-[x] Twelve focused core checks including real local UDP loopback, compatibility,
+[x] Seventeen focused core checks including real local UDP loopback, compatibility,
     password/replay protection, capacity and travel agreement ordering/timeouts.
 [x] Six-page native menu visibility, button connection, shared rule and leave
-    checks on final mod build 95a0ffc706c8470c866a75d7904112e3.
+    checks. See matching DLL identities in the current local test reports.
 [x] Native caster effects/projectiles and real spell damage to client; native
     book-selected archer flight metadata and real arrow damage to client.
     Final ranged report is a fresh run, including fired-arrow ownership and
     new-player damage attribution after pickup.
-[x] Final matching receipts: 29 shared-world, 37 native PvE, 19 native ranged,
-    12 native menu and 12 core checks. Fixture health/scripted kills are explicit.
-    No retained older-build checks in the final game reports.
+[x] Thirty native compatibility checks on v0.4.0, including all 30 settled Arena
+    items, deliberate pose drift, custom state, late joining, owner handoff,
+    suppressed replica cleanup and reconstruction after direct destruction.
+    Synthetic fixtures do not certify downloaded third-party mods.
+[x] Nineteen native teleport checks, nine protocol checks, and final matching
+    receipts for 29 shared-world, 38 native PvE, 19 native ranged and 12 menu
+    assertions. Exact DLL identities and test limits: docs/MOD-COMPATIBILITY.md.
 [ ] Certify other maps, procedural dungeons, area streaming, special encounters,
     every map option and third-party maps/content. Generalized support is not
     proof that every scripted level works.
@@ -63,7 +86,7 @@ STEAM / CONNECTION WORK
 DISTRIBUTION
 [x] Versioned ZIP layout with player README, quick start, build evidence,
     mod-only allowlist and third-party licenses. No game files in the archive.
-[x] Created/installed v0.3.0. Installed DLL hashes match the versioned ZIP build.
+[x] Installed v0.4.0. Installed DLL hashes match the final tested build.
 
 NOT REQUESTED / NOT INCLUDED
 No Steam game-server directory, dedicated server or host migration. Public
